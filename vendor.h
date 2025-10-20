@@ -1,3 +1,17 @@
+// Author : Muhammad Sayuti Ar'Akieb
+// NIM    : 2400018087
+
+// File ini mendefinisikan struktur data dan logika untuk mengelola data vendor.
+// Terdapat dua kelas utama:
+// 1. Kelas 'Vendor': Merepresentasikan entitas tunggal vendor (toko) dengan atribut
+//    seperti ID, nama toko, pemilik, kategori, kontak, dan status. Kelas ini
+//    menerapkan **Enkapsulasi** dengan membuat semua atribut menjadi 'private'
+//    dan menyediakan metode publik **Getter** dan **Setter** untuk mengakses
+//    dan memodifikasi data.
+// 2. Kelas 'AplikasiVendor': Bertanggung jawab untuk mengelola koleksi (vector)
+//    objek Vendor dan menyediakan antarmuka (menu) untuk operasi CRUD
+//    (Create/Tambah, Read/Lihat, Update/Edit, Delete/Hapus), serta fungsi pencarian.
+
 #ifndef VENDOR_H
 #define VENDOR_H
 
@@ -245,3 +259,4 @@ int main() {
 */
 
 #endif
+
