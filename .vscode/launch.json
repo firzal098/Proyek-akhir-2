@@ -1,0 +1,27 @@
+{
+    "version": "2.0.0",
+    "configurations": [
+        {
+            "name": "Build & Run Current File",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${fileDirname}/exe/${fileBasenameNoExtension}.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            "console": "externalTerminal",
+            "preLaunchTask": "build current file"
+        },
+
+        {
+            "name": "Run Current File",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${fileDirname}/exe/${fileBasenameNoExtension}.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            "console": "externalTerminal",
+        }
+    ]
+}
