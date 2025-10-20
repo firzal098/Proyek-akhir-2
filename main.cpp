@@ -1,4 +1,6 @@
 #include "CustomerManager.h"
+#include "ParkingManager.h"
+#include "VendorManager.h"
 #include <iostream>
 #include <string>
 #include <limits>
@@ -11,7 +13,9 @@ void tampilkanMenu() {
     std::cout << "1. Tambah Customer Baru" << std::endl;
     std::cout << "2. Tampilkan Semua Customer" << std::endl;
     std::cout << "3. Cari Customer (berdasarkan ID)" << std::endl;
-    std::cout << "4. Keluar" << std::endl;
+    std::cout << "4. Parkir" << std::endl;
+    std::cout << "5. Vendor" << std::endl;
+    std::cout << "6. Keluar" << std::endl;
     std::cout << "========================================" << std::endl;
     std::cout << "Pilih opsi: ";
 }
@@ -20,11 +24,13 @@ int main() {
     // BARU: Saat membuat objek CustomerManager, kita berikan nama file database-nya.
     // File "customers.json" akan dibuat di folder yang sama dengan main.cpp.
     CustomerManager customerMgr("customers.json");
+    ParkingManager parkingMgr;
+    VendorManager vendorMgr;
     
     int pilihan = 0;
 
     // Logika menu utama tidak perlu diubah sama sekali
-    while (pilihan != 4) {
+    while (pilihan != 6) {
         
         system("cls");
         customerMgr.logJumlahCustomer();
@@ -66,6 +72,16 @@ int main() {
                 break;
             }
             case 4:
+                system("cls");
+                parkingMgr.displayParkingMenu();
+                getch();
+                break;
+            case 5:
+                system("cls");
+                vendorMgr.jalankan();
+                getch();
+                break;
+            case 6:
                 std::cout << "Terima kasih telah menggunakan sistem. Sampai jumpa!" << std::endl;
                 getch();
                 break;
