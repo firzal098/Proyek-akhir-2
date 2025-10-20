@@ -41,9 +41,7 @@ public:
     string getKategori() const { return kategori; }
     string getStatus() const { return status; }
     string getKontak() const { return kontak; }
-    // V V V V V V V V V V V V V V V V V V V V V V V V V V V
-    string getNamaPemilik() const { return namaPemilik; } // <-- FUNGSI YANG HILANG TELAH DITAMBAHKAN
-    // ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^
+    string getNamaPemilik() const { return namaPemilik; }
 
     // --- SETTERS (Untuk mengubah nilai) ---
     void setNamaToko(const string& nama) { namaToko = nama; }
@@ -90,7 +88,7 @@ public:
             cout << "Pilih menu: ";
 
             if (!(cin >> pilihan)) {
-                cout << "? Input tidak valid. Masukkan angka untuk memilih menu.\n";
+                cout << "❌ Input tidak valid. Masukkan angka untuk memilih menu.\n";
                 clearCin();
                 pilihan = -1;
                 continue;
@@ -123,7 +121,7 @@ private:
         getline(cin, kontak);
 
         daftarVendor.push_back(Vendor(nextId++, toko, pemilik, kategori, kontak));
-        cout << "? Vendor " << toko << " berhasil ditambahkan dengan ID " << nextId - 1 << "!\n";
+        cout << "✅ Vendor " << toko << " berhasil ditambahkan dengan ID " << nextId - 1 << "!\n";
     }
 
     void tampilkanSemua() {
@@ -163,7 +161,7 @@ private:
         cout << "Masukkan ID vendor yang akan diubah: ";
         
         if (!(cin >> idCari)) {
-            cout << "? Input ID tidak valid.\n";
+            cout << "❌ Input ID tidak valid.\n";
             clearCin();
             return;
         }
@@ -171,7 +169,7 @@ private:
 
         for (auto &v : daftarVendor) {
             if (v.getId() == idCari) {
-                cout << "\n? Vendor ID " << idCari << " ditemukan. Detail saat ini:\n";
+                cout << "\n✅ Vendor ID " << idCari << " ditemukan. Detail saat ini:\n";
                 v.tampilkan();
 
                 string input;
@@ -181,7 +179,6 @@ private:
                 getline(cin, input);
                 if (!input.empty()) v.setNamaToko(input);
                 
-                // TIDAK ADA ERROR LAGI KARENA getNamaPemilik() SUDAH DITAMBAHKAN
                 cout << "Nama Pemilik Baru (" << v.getNamaPemilik() << "): "; 
                 getline(cin, input);
                 if (!input.empty()) v.setNamaPemilik(input);
@@ -198,7 +195,7 @@ private:
                 getline(cin, input);
                 if (!input.empty()) v.setStatus(input);
 
-                cout << "\n? Data vendor berhasil diperbarui!\n";
+                cout << "\n✅ Data vendor berhasil diperbarui!\n";
                 v.tampilkan();
                 return;
             }
@@ -212,7 +209,7 @@ private:
         cout << "Masukkan ID vendor yang akan dihapus: ";
         
         if (!(cin >> id)) {
-            cout << "? Input ID tidak valid.\n";
+            cout << "❌ Input ID tidak valid.\n";
             clearCin();
             return;
         }
@@ -227,7 +224,7 @@ private:
                 
                 if (tolower(konfirmasi) == 'y') {
                     daftarVendor.erase(it);
-                    cout << "? Vendor berhasil dihapus.\n";
+                    cout << "✅ Vendor berhasil dihapus.\n";
                 } else {
                     cout << "Pembatalan penghapusan.\n";
                 }
@@ -237,5 +234,14 @@ private:
         cout << "Vendor dengan ID tersebut tidak ditemukan.\n";
     }
 };
+
+// Catatan: untuk menjalankan program ini tambahkan ini di main.cpp
+/*
+int main() {
+    AplikasiVendor app;
+    app.jalankan();
+    return 0;
+}
+*/
 
 #endif
