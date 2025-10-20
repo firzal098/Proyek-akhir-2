@@ -2,9 +2,12 @@
 #include <iostream>
 #include <string>
 #include <limits>
+#include <conio.h>
 
 void tampilkanMenu() {
+
     std::cout << "\n===== Sistem Manajemen Customer Mall =====" << std::endl;
+
     std::cout << "1. Tambah Customer Baru" << std::endl;
     std::cout << "2. Tampilkan Semua Customer" << std::endl;
     std::cout << "3. Cari Customer (berdasarkan ID)" << std::endl;
@@ -22,7 +25,11 @@ int main() {
 
     // Logika menu utama tidak perlu diubah sama sekali
     while (pilihan != 4) {
+        
+        system("cls");
+        customerMgr.logJumlahCustomer();
         tampilkanMenu();
+
         std::cin >> pilihan;
 
         if (std::cin.fail()) {
@@ -34,12 +41,17 @@ int main() {
 
         switch (pilihan) {
             case 1:
+                system("cls");
                 customerMgr.tambahCustomer();
+                getch();
                 break;
             case 2:
+                system("cls");
                 customerMgr.tampilkanSemuaCustomer();
+                getch();
                 break;
             case 3: {
+                system("cls");
                 std::string idCari;
                 std::cout << "Masukkan ID Customer yang ingin dicari: ";
                 std::cin >> idCari;
@@ -50,13 +62,16 @@ int main() {
                 } else {
                     std::cout << ">> Customer dengan ID '" << idCari << "' tidak ditemukan. <<" << std::endl;
                 }
+                getch();
                 break;
             }
             case 4:
                 std::cout << "Terima kasih telah menggunakan sistem. Sampai jumpa!" << std::endl;
+                getch();
                 break;
             default:
                 std::cout << "Pilihan tidak valid. Silakan coba lagi." << std::endl;
+                getch();
                 break;
         }
     }

@@ -33,6 +33,10 @@ public:
     Customer* cariCustomer(const std::string& id);
     void tampilkanSemuaCustomer() const;
 
+    void logJumlahCustomer() {
+        std::cout << "[Info] Berhasil memuat " << daftarCustomer.size() << " data customer dari " << namaFileDatabase << std::endl;
+    }
+
     // BARU: Method publik untuk memuat data dari file (dipanggil di constructor)
     void muatDariFile();
 };
@@ -59,7 +63,7 @@ void CustomerManager::muatDariFile() {
         for (const auto& customerJson : data) {
             daftarCustomer.emplace_back(customerJson); // Menggunakan constructor Customer(json)
         }
-        std::cout << "[Info] Berhasil memuat " << daftarCustomer.size() << " data customer dari " << namaFileDatabase << std::endl;
+        
     } catch (json::parse_error& e) {
         std::cerr << "Error parsing JSON: " << e.what() << std::endl;
     }
