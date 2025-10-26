@@ -19,6 +19,7 @@ void tampilkanMenu() {
     std::cout << "6. Keluar" << std::endl;
     std::cout << "========================================" << std::endl;
     std::cout << "Pilih opsi: ";
+    std::cout << "wajib angka (1,2,3,4,5,6) ";
 }
 
 int main() {
