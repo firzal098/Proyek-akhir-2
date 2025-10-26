@@ -5,6 +5,7 @@
 #include <string>
 #include <limits>
 #include <conio.h>
+#include "vendor.h"
 
 void tampilkanMenu() {
 
@@ -25,7 +26,7 @@ int main() {
     // File "customers.json" akan dibuat di folder yang sama dengan main.cpp.
     CustomerManager customerMgr("customers.json");
     ParkingManager parkingMgr;
-    VendorManager vendorMgr;
+    AplikasiVendor vendorMgr;
     
     int pilihan = 0;
 
