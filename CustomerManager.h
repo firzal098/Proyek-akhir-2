@@ -41,7 +41,6 @@ public:
     void muatDariFile();
 };
 
-#endif // CUSTOMER_MANAGER_H
 
 
 // BARU: Constructor diubah untuk menerima nama file dan langsung memuat data
@@ -164,3 +163,6 @@ void CustomerManager::simpanKeFile() const {
         std::cerr << "Error: Tidak bisa membuka file untuk menyimpan data." << std::endl;
     }
 }
+
+
+#endif 
