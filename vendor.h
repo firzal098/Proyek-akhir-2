@@ -83,7 +83,7 @@ private:
     vector<Vendor> daftarVendor;
     int nextId = 1;
 
-    void clearCin() {
+    void clearCin() { 
         cin.clear();
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
     }

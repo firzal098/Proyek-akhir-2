@@ -3,9 +3,12 @@
         "email": "firzal@gamail.com",
         "id": "ff22ed",
         "nama": "Firzal Akbar Ramadhan",
-        "plat_nomor": [
-            "1234"
-        ],
         "telepon": "082180205923"
+    },
+    {
+        "email": "deco@gmail.com",
+        "id": "fred",
+        "nama": "deco",
+        "telepon": "082180206976"
     }
 ]
