@@ -22,10 +22,10 @@ void tampilkanMenu() {
     std::cout << "wajib angka (1,2,3,4,5,6) ";
 }
 
-int main() {
+void admin() {
     // BARU: Saat membuat objek CustomerManager, kita berikan nama file database-nya.
     // File "customers.json" akan dibuat di folder yang sama dengan main.cpp.
-    CustomerManager customerMgr("customers.json");
+    CustomerManager customerMgr("customers"); // Menggunakan direktori "customers"
     ParkingManager parkingMgr;
     AplikasiVendor vendorMgr;
     
@@ -94,6 +94,14 @@ int main() {
         }
     }
 
-    return 0;
 }
 
+void client() {
+
+}
+ 
+int main() {
+
+    admin();
+
+}
