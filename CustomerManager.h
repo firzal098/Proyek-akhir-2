@@ -5,26 +5,29 @@
 #include <vector>
 #include <string>
 #include <fstream>   // BARU: Untuk operasi file (ifstream, ofstream)
+#include <filesystem> // BARU: Untuk operasi direktori
 #include <iostream>
 #include <limits> // Diperlukan untuk numeric_limits
 #include "json.hpp"  // BARU: Sertakan header JSON
+#include "RandomGenerator.hpp"
 // Class CustomerManager bertanggung jawab untuk mengelola seluruh data customer.
 // Ini termasuk menambah, mencari, dan menampilkan customer.
 
 using namespace std; // Menggunakan namespace std untuk keringkasan
+namespace fs = std::filesystem; // Alias untuk std::filesystem
+
+using namespace RandomUtils;
 
 // Menggunakan alias lagi
 using json = nlohmann::json;
 
 class CustomerManager {
 private:
-    vector<Customer> daftarCustomer;
-    string namaFileDatabase; // BARU: Menyimpan nama file JSON
+    vector<Customer> daftarCustomer; // In-memory list of customers
+    string customerDataDir; // NEW: Directory to store individual customer JSON files
 
     bool apakahIDExists(const string& id) const;
     
-    // BARU: Method privat untuk menyimpan semua data ke file
-    void simpanKeFile() const;
 
 public:
     // BARU: Constructor sekarang menerima nama file sebagai argumen
@@ -34,40 +37,49 @@ public:
     Customer* cariCustomer(const string& id);
     void tampilkanSemuaCustomer() const;
 
-    void logJumlahCustomer() {
-        cout << "[Info] Berhasil memuat " << daftarCustomer.size() << " data customer dari " << namaFileDatabase << endl;
+    void logJumlahCustomer() const {
+        cout << "[Info] Berhasil memuat " << daftarCustomer.size() << " data customer dari direktori " << customerDataDir << endl;
     }
 
     // BARU: Method publik untuk memuat data dari file (dipanggil di constructor)
     void muatDariFile();
 };
 
-
-
 // BARU: Constructor diubah untuk menerima nama file dan langsung memuat data
-CustomerManager::CustomerManager(const string& filename) : namaFileDatabase(filename) {
+CustomerManager::CustomerManager(const string& dataDir) : customerDataDir(dataDir) {
+    // Pastikan direktori ada
+    if (!fs::exists(customerDataDir)) {
+        fs::create_directory(customerDataDir);
+        cout << "[Info] Direktori '" << customerDataDir << "' dibuat." << endl;
+    }
     muatDariFile();
 }
 
 // BARU: Implementasi untuk memuat data dari file JSON
 void CustomerManager::muatDariFile() {
-    ifstream file(namaFileDatabase);
-    // Jika file tidak ada atau kosong, tidak melakukan apa-apa
-    if (!file.is_open() || file.peek() == ifstream::traits_type::eof()) {
+    daftarCustomer.clear(); // Bersihkan data yang ada di memori sebelum memuat ulang
+
+    if (!fs::exists(customerDataDir) || fs::is_empty(customerDataDir)) {
         cout << "[Info] Database tidak ditemukan atau kosong. Memulai dengan data baru." << endl;
         return;
     }
 
-    try {
-        json data = json::parse(file);
-        for (const auto& customerJson : data) {
-            daftarCustomer.emplace_back(customerJson); // Menggunakan constructor Customer(json)
+    for (const auto& entry : fs::directory_iterator(customerDataDir)) {
+        if (entry.is_regular_file() && entry.path().extension() == ".json") {
+            ifstream file(entry.path());
+            if (!file.is_open()) {
+                cerr << "Error: Gagal membuka file customer: " << entry.path() << endl;
+                continue;
+            }
+            try {
+                json customerJson = json::parse(file);
+                daftarCustomer.emplace_back(customerJson); // Menggunakan constructor Customer(json)
+            } catch (json::parse_error& e) {
+                cerr << "Error parsing JSON from " << entry.path() << ": " << e.what() << endl;
+            }
+            file.close();
         }
-        
-    } catch (json::parse_error& e) {
-        cerr << "Error parsing JSON: " << e.what() << endl;
     }
-    file.close();
 }
 
 bool CustomerManager::apakahIDExists(const string& id) const {
@@ -80,16 +92,15 @@ bool CustomerManager::apakahIDExists(const string& id) const {
 }
 
 void CustomerManager::tambahCustomer() {
-    string id, nama, telepon, email;
+    string id, nama, telepon, email, password;
 
     cout << "\n--- Pendaftaran Customer Baru ---" << endl;
 
     // Meminta dan memvalidasi ID
     while (true) {
-        cout << "Masukkan ID Customer (unik): ";
-        cin >> id;
+        id = generateRandomString();
         if (apakahIDExists(id)) {
-            cout << "ID '" << id << "' sudah digunakan. Silakan gunakan ID lain." << endl;
+           // cout << "ID '" << id << "' sudah digunakan. Silakan gunakan ID lain." << endl;
         } else {
             break;
         }
@@ -107,14 +118,16 @@ void CustomerManager::tambahCustomer() {
     cout << "Masukkan Email: ";
     getline(cin, email);
 
+    cout << "Masukkan Password: ";
+    getline(cin, password);
+
     // Membuat objek customer baru
-    Customer newCustomer(id, nama, telepon, email);
+    Customer newCustomer(id, nama, telepon, email, password);
 
     daftarCustomer.push_back(newCustomer);
 
-    // BARU: Setiap kali customer ditambahkan, langsung simpan ke file
-    simpanKeFile();
-
+    newCustomer.save();
+    
     cout << "\n>> Customer '" << nama << "' berhasil didaftarkan dan data telah disimpan! <<" << endl;
 }
 
@@ -138,21 +151,6 @@ void CustomerManager::tampilkanSemuaCustomer() const {
     }
 }
 
-// BARU: Implementasi untuk menyimpan data ke file JSON
-void CustomerManager::simpanKeFile() const {
-    json dataJson = json::array();
-    for (const auto& customer : daftarCustomer) {
-        dataJson.push_back(customer.toJson());
-    }
-
-    ofstream file(namaFileDatabase);
-    if (file.is_open()) {
-        file << dataJson.dump(4); // dump(4) untuk format JSON yang rapi (pretty print)
-        file.close();
-    } else {
-        cerr << "Error: Tidak bisa membuka file untuk menyimpan data." << endl;
-    }
-}
 
 
 #endif 

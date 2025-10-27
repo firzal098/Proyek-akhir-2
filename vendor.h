@@ -145,7 +145,7 @@ public:
                 continue;
             }
             cin.ignore();
-
+// submenu
             switch (pilihan) {
                 case 1: tambahVendor(); break;
                 case 2: tampilkanSemua(); break;
