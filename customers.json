@@ -1,14 +1,9 @@
 [
     {
-        "email": "firzal@gamail.com",
-        "id": "ff22ed",
-        "nama": "Firzal Akbar Ramadhan",
-        "telepon": "082180205923"
-    },
-    {
-        "email": "deco@gmail.com",
-        "id": "fred",
-        "nama": "deco",
-        "telepon": "082180206976"
+        "email": "firzalyt@gmail.com",
+        "id": "faa",
+        "nama": "firzal akbar ramadhan",
+        "password": "sosidfubn",
+        "telepon": "8218020239"
     }
 ]
