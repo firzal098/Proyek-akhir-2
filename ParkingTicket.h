@@ -23,13 +23,16 @@ public:
     long long waktuKeluar;
     double biaya;
     TicketStatus status;
+    string parkingSlot; // <-- MODIFIKASI: Ditambahkan untuk menyimpan slot
 
     // Default constructor
-    ParkingTicket() : ticketID(0), customerID(-1), waktuMasuk(0), waktuKeluar(0), biaya(0.0), status(ACTIVE) {}
+    ParkingTicket() : ticketID(0), customerID(-1), waktuMasuk(0), waktuKeluar(0), biaya(0.0), status(ACTIVE), parkingSlot("") {} // <-- MODIFIKASI: Ditambahkan
 
     // Constructor untuk membuat tiket baru saat kendaraan masuk
-    ParkingTicket(int custID, const string& plat)
-        : customerID(custID), platNomor(plat), waktuKeluar(0), biaya(0.0), status(ACTIVE) {
+    ParkingTicket(int custID, const string& plat, const string& slot) // <-- MODIFIKASI: Ditambahkan "slot"
+        : customerID(custID), platNomor(plat), waktuKeluar(0), biaya(0.0), status(ACTIVE),
+          parkingSlot(slot) // <-- MODIFIKASI: Ditambahkan
+    {
         
         // Generate a unique ticket ID based on current timestamp
         ticketID = chrono::duration_cast<chrono::nanoseconds>(
@@ -43,6 +46,7 @@ public:
     }
 
     // Fungsi untuk menghitung biaya saat kendaraan keluar
+    // (Fungsi ini tidak perlu diubah)
     void hitungBiaya() {
         if (status == ACTIVE) {
             // Catat waktu keluar
@@ -63,4 +67,3 @@ public:
 };
 
 #endif // PARKING_TICKET_H
-

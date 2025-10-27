@@ -1,102 +1,175 @@
 #ifndef PARKING_MANAGER_H
 #define PARKING_MANAGER_H
 
-#include <iostream>       // <-- Pastikan semua include ini ada
+#include <iostream>
+#include <vector>
 #include <string>
 #include <limits>
 #include <conio.h>
-#include "ParkingSystem.h" // <-- Penting untuk logika parkir
+#include <iomanip> // untuk setw
+#include "ParkingSystem.h" // <-- "Bos" punya "Otak"
 
-// Kita gunakan std namespace di sini untuk keringkasan
 using namespace std;
 
 class ParkingManager {
 private:
-    ParkingSystem parkingSys; // Buat instance dari ParkingSystem
+    ParkingSystem parkingSys; // "Bos" memiliki "Otak"
+
+    // --- PETA MILIK "BOS" ---
+    int totalRows;
+    int totalCols;
+    vector<vector<string>> slotMap; 
+
+    void initializeParkingMap() {
+        totalRows = 5;
+        totalCols = 10;
+        slotMap.resize(totalRows);
+        for (int i = 0; i < totalRows; ++i) {
+            slotMap[i].resize(totalCols);
+            for (int j = 0; j < totalCols; ++j) {
+                char rowChar = 'A' + i;
+                slotMap[i][j] = rowChar + to_string(j + 1);
+            }
+        }
+    }
 
 public:
-    // KITA AKAN MELETAKKAN SEMUA LOGIKA DI DALAM FUNGSI INI
+    // --- FUNGSI PETA (Milik "Bos") ---
+    void displayParkingMap() {
+        system("cls");
+        cout << "== PETA STATUS PARKIR ==\n\n";
+        for (int i = 0; i < totalRows; ++i) {
+            for (int j = 0; j < totalCols; ++j) {
+                cout << "[" << setw(3) << slotMap[i][j] << "] ";
+            }
+            cout << "\n";
+        }
+        cout << "\n[XX] = Terisi\n";
+    }
+
+    bool isSlotValid(string slotName) {
+        for (auto& row : slotMap) {
+            for (auto& slot : row) {
+                if (slot == slotName) return true;
+            }
+        }
+        return false; // Tidak ada atau sudah "XX"
+    }
+
+    void occupySlot(string slotName) {
+        for (auto& row : slotMap) {
+            for (auto& slot : row) {
+                if (slot == slotName) {
+                    slot = "XX";
+                    return;
+                }
+            }
+        }
+    }
+
+    void vacateSlot(string slotName) {
+        char rowChar = 'A' + (slotName[0] - 'A');
+        int colNum = stoi(slotName.substr(1));
+        int rowIndex = rowChar - 'A';
+        int colIndex = colNum - 1;
+        if (rowIndex >= 0 && rowIndex < totalRows && colIndex >= 0 && colIndex < totalCols) {
+            slotMap[rowIndex][colIndex] = slotName;
+        }
+    }
+
+    // --- KONSTRUKTOR ---
+    ParkingManager() {
+        initializeParkingMap();
+        // parkingSys otomatis dibuat
+    }
+
+    // --- FUNGSI MENU (Satu-satunya fungsi yang dipanggil main.cpp) ---
     void displayParkingMenu() {
         int pilihan = 0;
-
-        // Loop sub-menu parkir, akan berhenti jika pengguna memilih 4
         while (pilihan != 4) {
             system("cls");
-            std::cout << "\n===== Manajemen Parkir =====" << std::endl;
-            std::cout << "1. Masuk Parkir" << std::endl;
-            std::cout << "2. Keluar Parkir" << std::endl;
-            std::cout << "3. Tampilkan Status Parkir" << std::endl;
-            std::cout << "4. Kembali ke Menu Utama" << std::endl;
-            std::cout << "============================" << std::endl;
-            std::cout << "Pilih opsi: ";
+            displayParkingMap(); // Tampilkan peta milik sendiri
 
-            std::cin >> pilihan;
+            cout << "\n===== Manajemen Parkir =====" << endl;
+            cout << "1. Masuk Parkir" << endl;
+            cout << "2. Keluar Parkir" << endl;
+            cout << "3. Tampilkan Status Parkir" << endl;
+            cout << "4. Kembali ke Menu Utama" << endl;
+            cout << "============================" << endl;
+            cout << "Pilih opsi: ";
 
-            if (std::cin.fail()) {
-                std::cout << "Input tidak valid. Harap masukkan angka." << std::endl;
-                std::cin.clear();
-                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            cin >> pilihan;
+
+            if (cin.fail()) {
+                cout << "Input tidak valid." << endl;
+                cin.clear();
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
                 getch();
-                continue; // Ulangi loop sub-menu
+                continue;
             }
+            cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Clear buffer
 
-            // Hubungkan pilihan ke fungsi ParkingSystem
             switch (pilihan) {
                 case 1: { // Masuk Parkir
-                    system("cls");
-                    int customerID;
-                    std::string platNomor;
-                    
-                    std::cout << "--- Masuk Parkir ---" << std::endl;
-                    std::cout << "Masukkan ID Customer (angka): "; 
-                    std::cin >> customerID;
-                    
-                    if (std::cin.fail()) {
-                         std::cout << "Input ID tidak valid." << std::endl;
-                         std::cin.clear();
-                         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-                         getch();
-                         break;
+                    displayParkingMap(); // Tampilkan peta lagi
+                    string chosenSlot;
+                    while (true) {
+                        cout << "\nMasukkan slot parkir pilihan (misal: A1): ";
+                        getline(cin, chosenSlot);
+                        if (isSlotValid(chosenSlot)) { // Cek peta sendiri
+                            break;
+                        } else {
+                            cout << "Slot tidak valid atau terisi. Coba lagi." << endl;
+                        }
                     }
 
-                    std::cout << "Masukkan Plat Nomor: ";
-                    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Clear buffer
-                    std::getline(std::cin, platNomor);
+                    string platNomor;
+                    cout << "Masukkan Plat Nomor: ";
+                    getline(cin, platNomor);
+
+                    // --- INI PERBAIKAN UNTUK ERROR 'isCustomer' ---
+                    int customerID;
+                    cout << "Masukkan ID Customer (angka, ketik -1 jika non-member): ";
+                    cin >> customerID;
+                    if (cin.fail()) { /* (error handling) */ break; }
                     
-                    parkingSys.createTicket(customerID, platNomor); // Panggil fungsi ParkingSystem
+                    // 1. Panggil "Otak" untuk buat tiket
+                    bool sukses = parkingSys.createTicket(customerID, platNomor, chosenSlot);
+                    
+                    // 2. Jika "Otak" berhasil, ubah "Peta"
+                    if (sukses) {
+                        occupySlot(chosenSlot); // Panggil fungsi peta sendiri
+                    }
+
                     getch();
                     break;
                 }
                 case 2: { // Keluar Parkir
-                    system("cls");
-                    uint64_t ticketID; 
-                    std::cout << "--- Keluar Parkir ---" << std::endl;
-                    std::cout << "Masukkan ID Tiket: ";
-                    std::cin >> ticketID;
+                    uint64_t ticketID;
+                    cout << "--- Keluar Parkir ---" << endl;
+                    cout << "Masukkan ID Tiket: ";
+                    cin >> ticketID;
+                    if (cin.fail()) { /* (error handling) */ break; }
 
-                    if (std::cin.fail()) {
-                         std::cout << "Input ID Tiket tidak valid." << std::endl;
-                         std::cin.clear();
-                         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-                         getch();
-                         break;
+                    // 1. Panggil "Otak" untuk checkout
+                    string slotYgKosong = parkingSys.checkout(ticketID);
+
+                    // 2. Jika "Otak" berhasil, ubah "Peta"
+                    if (!slotYgKosong.empty()) {
+                        vacateSlot(slotYgKosong); // Panggil fungsi peta sendiri
                     }
-
-                    parkingSys.checkout(ticketID); // Panggil fungsi ParkingSystem
                     getch();
                     break;
                 }
                 case 3: // Tampilkan Status
-                    system("cls");
-                    parkingSys.displayActiveTickets(); // Panggil fungsi ParkingSystem
+                    parkingSys.displayActiveTickets(); // Panggil "Otak"
                     getch();
                     break;
                 case 4: // Kembali
-                    std::cout << "Kembali ke Menu Utama..." << std::endl;
-                    // getch() akan ditangani oleh loop di main.cpp
+                    cout << "Kembali ke Menu Utama..." << endl;
                     break;
                 default:
-                    std::cout << "Pilihan tidak valid. Silakan coba lagi." << std::endl;
+                    cout << "Pilihan tidak valid." << endl;
                     getch();
                     break;
             }

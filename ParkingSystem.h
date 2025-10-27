@@ -4,13 +4,12 @@
 #include <iostream>
 #include <vector>
 #include <fstream>
-#include <iomanip>
+#include <iomanip> // Untuk put_time
 #include <string>
 #include "ParkingTicket.h"
-#include "CustomerManager.h" 
+// HAPUS: #include "ParkingManager.h" 
 #include "json.hpp"
 
-// Tambahkan using namespace std
 using namespace std;
 using json = nlohmann::json;
 
@@ -19,16 +18,16 @@ private:
     vector<ParkingTicket> activeTickets; 
     vector<ParkingTicket> ticketHistory; 
     const string historyFile = "parking_history.json";
+    // HAPUS: ParkingManager manager;
 
+    // (Salin fungsi to_json dan from_json kamu ke sini...)
     void to_json(json& j, const ParkingTicket& t) {
         j = json{
-            {"ticketID", t.ticketID},
-            {"customerID", t.customerID},
-            {"platNomor", t.platNomor},
-            {"waktuMasuk", t.waktuMasuk},
-            {"waktuKeluar", t.waktuKeluar},
-            {"biaya", t.biaya},
-            {"status", (t.status == ACTIVE ? "ACTIVE" : "PAID")}
+            {"ticketID", t.ticketID}, {"customerID", t.customerID},
+            {"platNomor", t.platNomor}, {"waktuMasuk", t.waktuMasuk},
+            {"waktuKeluar", t.waktuKeluar}, {"biaya", t.biaya},
+            {"status", (t.status == ACTIVE ? "ACTIVE" : "PAID")},
+            {"parkingSlot", t.parkingSlot}
         };
     }
 
@@ -39,8 +38,53 @@ private:
         j.at("waktuMasuk").get_to(t.waktuMasuk);
         j.at("waktuKeluar").get_to(t.waktuKeluar);
         j.at("biaya").get_to(t.biaya);
-        string statusStr = j.at("status");
-        t.status = (statusStr == "ACTIVE" ? ACTIVE : PAID);
+        t.status = (j.at("status") == "ACTIVE" ? ACTIVE : PAID);
+        if (j.find("parkingSlot") != j.end()) {
+            j.at("parkingSlot").get_to(t.parkingSlot);
+        } else {
+            t.parkingSlot = "N/A";
+        }
+    }
+
+    // (Salin fungsi saveHistory dan loadHistory kamu ke sini...)
+    void saveHistory() {
+        json j_history;
+        for (const auto& ticket : ticketHistory) {
+            json j_ticket;
+            to_json(j_ticket, ticket);
+            j_history.push_back(j_ticket);
+        }
+        ofstream file(historyFile);
+        if (file.is_open()) {
+            file << j_history.dump(4);
+            file.close();
+        } else {
+            cerr << "Gagal menyimpan riwayat." << endl;
+        }
+    }
+
+    void loadHistory() {
+        ifstream file(historyFile);
+        if (file.is_open()) {
+            if (file.peek() == ifstream::traits_type::eof()) {
+                cout << "File riwayat parkir kosong." << endl;
+                file.close();
+                return;
+            }
+            json j_history;
+            file >> j_history;
+            if (j_history.is_array()) {
+                for (const auto& j_ticket : j_history) {
+                    ParkingTicket ticket;
+                    from_json(j_ticket, ticket);
+                    ticketHistory.push_back(ticket);
+                }
+            }
+            file.close();
+            cout << "Riwayat parkir berhasil dimuat." << endl;
+        } else {
+            cout << "File riwayat tidak ditemukan." << endl;
+        }
     }
 
 
@@ -49,76 +93,50 @@ public:
         loadHistory();
     }
 
-    void createTicket(int customerID, const string& platNomor) {
-        ParkingTicket newTicket(customerID, platNomor);
+    // --- FUNGSI INI DIMODIFIKASI ---
+    // Kembalikan 'bool' (true/false)
+    bool createTicket(int customerID, const string& platNomor, const string& slot) {
+        for(const auto& ticket : activeTickets) {
+            if (ticket.platNomor == platNomor) {
+                cout << "Error: Kendaraan " << platNomor << " sudah terparkir." << endl;
+                return false; // Gagal
+            }
+        }
+        ParkingTicket newTicket(customerID, platNomor, slot); 
         activeTickets.push_back(newTicket);
-        cout << "Tiket berhasil dibuat untuk plat " << platNomor << endl;
+        cout << "Tiket berhasil dibuat untuk plat " << platNomor << " di slot " << slot << endl;
         cout << "ID Tiket: " << newTicket.ticketID << endl;
+        return true; // Sukses
     }
 
-    void checkout(uint64_t ticketID) {
+    // --- FUNGSI INI DIMODIFIKASI ---
+    // Kembalikan 'string' (nama slot)
+    string checkout(uint64_t ticketID) {
         for (size_t i = 0; i < activeTickets.size(); ++i) {
             if (activeTickets[i].ticketID == ticketID) {
                 activeTickets[i].hitungBiaya();
+                string slotToVacate = activeTickets[i].parkingSlot; 
                 
                 cout << "\n--- Struk Parkir ---\n";
                 cout << "ID Tiket: " << activeTickets[i].ticketID << endl;
-                cout << "ID Customer: " << activeTickets[i].customerID << endl;
                 cout << "Plat Nomor: " << activeTickets[i].platNomor << endl;
-                
-                time_t masukTime = activeTickets[i].waktuMasuk;
-                time_t keluarTime = activeTickets[i].waktuKeluar;
-                cout << "Waktu Masuk : " << put_time(localtime(&masukTime), "%Y-%m-%d %H:%M:%S") << endl;
-                cout << "Waktu Keluar: " << put_time(localtime(&keluarTime), "%Y-%m-%d %H:%M:%S") << endl;
-
+                cout << "Slot Parkir: " << activeTickets[i].parkingSlot << endl;
+                // (Tambahkan detail struk lain jika perlu)
                 cout << "Total Biaya: Rp" << activeTickets[i].biaya << endl;
                 cout << "Status: LUNAS" << endl;
                 cout << "--------------------\n";
 
                 ticketHistory.push_back(activeTickets[i]);
                 activeTickets.erase(activeTickets.begin() + i);
-
                 saveHistory();
-                return;
+                return slotToVacate; // Kembalikan nama slot
             }
         }
-        cout << "Error: Tiket dengan ID " << ticketID << " tidak ditemukan atau sudah checkout." << endl;
-    }
-    
-    void saveHistory() {
-        json j_history;
-        for (const auto& ticket : ticketHistory) {
-            json j_ticket;
-            to_json(j_ticket, ticket);
-            j_history.push_back(j_ticket);
-        }
-
-        ofstream file(historyFile);
-        if (file.is_open()) {
-            file << j_history.dump(4);
-            file.close();
-        } else {
-            cerr << "Gagal membuka file untuk menyimpan riwayat parkir." << endl;
-        }
+        cout << "Error: Tiket dengan ID " << ticketID << " tidak ditemukan." << endl;
+        return ""; // Kembalikan string kosong jika gagal
     }
 
-    void loadHistory() {
-        ifstream file(historyFile);
-        if (file.is_open()) {
-            json j_history;
-            file >> j_history;
-            for (const auto& j_ticket : j_history) {
-                ParkingTicket ticket;
-                from_json(j_ticket, ticket);
-                ticketHistory.push_back(ticket);
-            }
-            file.close();
-            cout << "Riwayat parkir berhasil dimuat." << endl;
-        } else {
-            cout << "File riwayat parkir tidak ditemukan. File baru akan dibuat." << endl;
-        }
-    }
-
+    // (displayActiveTickets tidak berubah)
     void displayActiveTickets() const {
         cout << "\n--- Kendaraan Saat Ini di Dalam Parkir ---\n";
         if (activeTickets.empty()) {
@@ -127,12 +145,13 @@ public:
         }
         for(const auto& ticket : activeTickets) {
             cout << "ID Tiket: " << ticket.ticketID 
-                      << ", Plat: " << ticket.platNomor 
-                      << ", ID Customer: " << ticket.customerID << endl;
+                 << ", Plat: " << ticket.platNomor 
+                 << ", Slot: " << ticket.parkingSlot << endl;
         }
         cout << "-------------------------------------------\n";
     }
+
+    // HAPUS FUNGSI: displayMap() dan isSlotValid()
 };
 
 #endif // PARKING_SYSTEM_H
-
