@@ -1,25 +1,11 @@
-// Author : Muhammad Sayuti Ar'Akieb
-// NIM    : 2400018087
-
-// File ini mendefinisikan struktur data dan logika untuk mengelola data vendor.
-// Terdapat dua kelas utama:
-// 1. Kelas 'Vendor': Merepresentasikan entitas tunggal vendor (toko) dengan atribut
-//    seperti ID, nama toko, pemilik, kategori, kontak, dan status. Kelas ini
-//    menerapkan **Enkapsulasi** dengan membuat semua atribut menjadi 'private'
-//    dan menyediakan metode publik **Getter** dan **Setter** untuk mengakses
-//    dan memodifikasi data.
-// 2. Kelas 'AplikasiVendor': Bertanggung jawab untuk mengelola koleksi (vector)
-//    objek Vendor dan menyediakan antarmuka (menu) untuk operasi CRUD
-//    (Create/Tambah, Read/Lihat, Update/Edit, Delete/Hapus), serta fungsi pencarian.
-
 #ifndef VENDOR_H
 #define VENDOR_H
 
 #include <iostream>
 #include <string>
 #include <vector>
-#include <algorithm> // Untuk std::transform
-#include <limits>    // Untuk penanganan error cin
+#include <algorithm>
+#include <limits>
 using namespace std;
 
 // --- UTILITY FUNCTION ---
@@ -28,28 +14,48 @@ string toLower(string str) {
     return str;
 }
 
-// ===== CLASS VENDOR (Disempurnakan dengan ENKAPSULASI) =====
+// ===== CLASS PENJUALAN =====
+class Penjualan {
+private:
+    int idPenjualan;
+    string namaProduk;
+    int jumlah;
+    double hargaSatuan;
+
+public:
+    Penjualan(int id = 0, string produk = "", int jml = 0, double harga = 0.0)
+        : idPenjualan(id), namaProduk(produk), jumlah(jml), hargaSatuan(harga) {}
+
+    double getTotal() const { return jumlah * hargaSatuan; }
+
+    void tampilkan() const {
+        cout << "----------------------------------\n";
+        cout << "ID Penjualan : " << idPenjualan << endl;
+        cout << "Produk       : " << namaProduk << endl;
+        cout << "Jumlah       : " << jumlah << endl;
+        cout << "Harga Satuan : " << hargaSatuan << endl;
+        cout << "Total Harga  : " << getTotal() << endl;
+    }
+};
+
+// ===== CLASS VENDOR (DENGAN ENKAPSULASI & PENJUALAN) =====
 class Vendor {
 private:
     int id;
     string namaToko;
-    string namaPemilik; // Private
+    string namaPemilik;
     string kategori;
     string kontak;
     string status;
+    vector<Penjualan> daftarPenjualan; // <-- daftar penjualan dinamis
+    int nextPenjualanId = 1;
 
 public:
     // Constructor
-    Vendor(int id = 0, string toko = "", string pemilik = "", string kategori = "", string kontak = "", string status = "Aktif") {
-        this->id = id;
-        this->namaToko = toko;
-        this->namaPemilik = pemilik;
-        this->kategori = kategori;
-        this->kontak = kontak;
-        this->status = status;
-    }
+    Vendor(int id = 0, string toko = "", string pemilik = "", string kategori = "", string kontak = "", string status = "Aktif")
+        : id(id), namaToko(toko), namaPemilik(pemilik), kategori(kategori), kontak(kontak), status(status) {}
 
-    // --- GETTERS (Untuk membaca nilai) ---
+    // Getters
     int getId() const { return id; }
     string getNamaToko() const { return namaToko; }
     string getKategori() const { return kategori; }
@@ -57,14 +63,44 @@ public:
     string getKontak() const { return kontak; }
     string getNamaPemilik() const { return namaPemilik; }
 
-    // --- SETTERS (Untuk mengubah nilai) ---
+    // Setters
     void setNamaToko(const string& nama) { namaToko = nama; }
     void setNamaPemilik(const string& pemilik) { namaPemilik = pemilik; }
     void setKategori(const string& kat) { kategori = kat; }
     void setKontak(const string& kont) { kontak = kont; }
     void setStatus(const string& stat) { status = stat; }
 
-    // Metode menampilkan data
+    // Menambah penjualan
+    void tambahPenjualan() {
+        string produk;
+        int jumlah;
+        double harga;
+
+        cout << "\n=== TAMBAH PENJUALAN UNTUK " << namaToko << " ===\n";
+        cout << "Nama Produk: ";
+        getline(cin, produk);
+        cout << "Jumlah: ";
+        cin >> jumlah;
+        cout << "Harga Satuan: ";
+        cin >> harga;
+        cin.ignore();
+
+        daftarPenjualan.push_back(Penjualan(nextPenjualanId++, produk, jumlah, harga));
+        cout << "Penjualan berhasil ditambahkan!\n";
+    }
+
+    // Menampilkan seluruh penjualan vendor
+    void tampilkanPenjualan() const {
+        if (daftarPenjualan.empty()) {
+            cout << "Belum ada penjualan untuk vendor ini.\n";
+            return;
+        }
+        cout << "\n=== DAFTAR PENJUALAN " << namaToko << " ===\n";
+        for (const auto &p : daftarPenjualan)
+            p.tampilkan();
+    }
+
+    // Menampilkan data vendor
     void tampilkan() const {
         cout << "------------------------------\n";
         cout << "ID: " << id << endl;
@@ -77,7 +113,7 @@ public:
     }
 };
 
-// ===== CLASS APLIKASI VENDOR (TIDAK ADA PERUBAHAN) =====
+// ===== CLASS APLIKASI VENDOR =====
 class AplikasiVendor {
 private:
     vector<Vendor> daftarVendor;
@@ -97,12 +133,13 @@ public:
             cout << "2. Lihat Semua Vendor\n";
             cout << "3. Cari Vendor (Nama/Kategori)\n";
             cout << "4. Edit Detail Vendor\n";
-            cout << "5. Hapus Vendor\n";
+            cout << "5. Masuk ke Menu Vendor (Penjualan)\n"; // <-- menu baru
+            cout << "6. Hapus Vendor\n";
             cout << "0. Keluar\n";
             cout << "Pilih menu: ";
 
             if (!(cin >> pilihan)) {
-                cout << "❌ Input tidak valid. Masukkan angka untuk memilih menu.\n";
+                cout << "Input tidak valid.\n";
                 clearCin();
                 pilihan = -1;
                 continue;
@@ -114,7 +151,8 @@ public:
                 case 2: tampilkanSemua(); break;
                 case 3: cariVendor(); break;
                 case 4: editVendor(); break;
-                case 5: hapusVendor(); break;
+                case 5: menuVendor(); break; // <-- submenu vendor
+                case 6: hapusVendor(); break;
                 case 0: cout << "Terima kasih, program dihentikan.\n"; break;
                 default: cout << "Pilihan tidak valid.\n"; break;
             }
@@ -122,6 +160,7 @@ public:
     }
 
 private:
+    // CRUD dasar
     void tambahVendor() {
         string toko, pemilik, kategori, kontak;
         cout << "\n=== TAMBAH VENDOR ===\n";
@@ -135,7 +174,7 @@ private:
         getline(cin, kontak);
 
         daftarVendor.push_back(Vendor(nextId++, toko, pemilik, kategori, kontak));
-        cout << "✅ Vendor " << toko << " berhasil ditambahkan dengan ID " << nextId - 1 << "!\n";
+        cout << "Vendor " << toko << " berhasil ditambahkan!\n";
     }
 
     void tampilkanSemua() {
@@ -143,7 +182,7 @@ private:
             cout << "Belum ada vendor terdaftar.\n";
             return;
         }
-        cout << "\n=== DAFTAR VENDOR (" << daftarVendor.size() << " Total) ===\n";
+        cout << "\n=== DAFTAR VENDOR ===\n";
         for (const auto &v : daftarVendor)
             v.tampilkan();
     }
@@ -156,7 +195,6 @@ private:
         string cariLower = toLower(cari);
         bool ditemukan = false;
 
-        cout << "\n--- HASIL PENCARIAN ---\n";
         for (const auto &v : daftarVendor) {
             if (toLower(v.getNamaToko()).find(cariLower) != string::npos || 
                 toLower(v.getKategori()).find(cariLower) != string::npos) {
@@ -164,66 +202,38 @@ private:
                 ditemukan = true;
             }
         }
-
         if (!ditemukan)
-            cout << "Vendor dengan kriteria '" << cari << "' tidak ditemukan.\n";
+            cout << "Vendor tidak ditemukan.\n";
     }
 
     void editVendor() {
-        int idCari;
-        cout << "\n=== EDIT VENDOR ===\n";
-        cout << "Masukkan ID vendor yang akan diubah: ";
-        
-        if (!(cin >> idCari)) {
-            cout << "❌ Input ID tidak valid.\n";
+        int id;
+        cout << "\nMasukkan ID Vendor: ";
+        if (!(cin >> id)) {
+            cout << "Input tidak valid.\n";
             clearCin();
             return;
         }
         cin.ignore();
 
         for (auto &v : daftarVendor) {
-            if (v.getId() == idCari) {
-                cout << "\n✅ Vendor ID " << idCari << " ditemukan. Detail saat ini:\n";
-                v.tampilkan();
-
+            if (v.getId() == id) {
                 string input;
-                cout << "\nMasukkan detail baru (kosongkan untuk mempertahankan nilai lama):\n";
-                
-                cout << "Nama Toko Baru (" << v.getNamaToko() << "): ";
+                cout << "Edit Nama Toko (" << v.getNamaToko() << "): ";
                 getline(cin, input);
                 if (!input.empty()) v.setNamaToko(input);
-                
-                cout << "Nama Pemilik Baru (" << v.getNamaPemilik() << "): "; 
-                getline(cin, input);
-                if (!input.empty()) v.setNamaPemilik(input);
-                
-                cout << "Kategori Baru (" << v.getKategori() << "): ";
-                getline(cin, input);
-                if (!input.empty()) v.setKategori(input);
-
-                cout << "Kontak Baru (" << v.getKontak() << "): ";
-                getline(cin, input);
-                if (!input.empty()) v.setKontak(input);
-
-                cout << "Status Baru (Aktif/Tidak Aktif) (" << v.getStatus() << "): ";
-                getline(cin, input);
-                if (!input.empty()) v.setStatus(input);
-
-                cout << "\n✅ Data vendor berhasil diperbarui!\n";
-                v.tampilkan();
+                cout << "Data vendor diperbarui.\n";
                 return;
             }
         }
-        cout << "Vendor dengan ID " << idCari << " tidak ditemukan.\n";
+        cout << "Vendor tidak ditemukan.\n";
     }
 
     void hapusVendor() {
         int id;
-        cout << "\n=== HAPUS VENDOR ===\n";
-        cout << "Masukkan ID vendor yang akan dihapus: ";
-        
+        cout << "\nMasukkan ID Vendor yang akan dihapus: ";
         if (!(cin >> id)) {
-            cout << "❌ Input ID tidak valid.\n";
+            cout << "Input tidak valid.\n";
             clearCin();
             return;
         }
@@ -231,17 +241,53 @@ private:
 
         for (auto it = daftarVendor.begin(); it != daftarVendor.end(); ++it) {
             if (it->getId() == id) {
-                cout << "Yakin ingin menghapus vendor '" << it->getNamaToko() << "' (ID: " << id << ")? (y/n): ";
-                char konfirmasi;
-                cin >> konfirmasi;
-                cin.ignore();
-                
-                if (tolower(konfirmasi) == 'y') {
-                    daftarVendor.erase(it);
-                    cout << "✅ Vendor berhasil dihapus.\n";
-                } else {
-                    cout << "Pembatalan penghapusan.\n";
-                }
+                daftarVendor.erase(it);
+                cout << "Vendor dihapus.\n";
+                return;
+            }
+        }
+        cout << "Vendor tidak ditemukan.\n";
+    }
+
+    // ===== MENU KHUSUS UNTUK VENDOR =====
+    void menuVendor() {
+        if (daftarVendor.empty()) {
+            cout << "Belum ada vendor untuk dikelola.\n";
+            return;
+        }
+
+        int id;
+        cout << "\nMasukkan ID Vendor yang ingin dikelola: ";
+        if (!(cin >> id)) {
+            cout << "Input tidak valid.\n";
+            clearCin();
+            return;
+        }
+        cin.ignore();
+
+        for (auto &v : daftarVendor) {
+            if (v.getId() == id) {
+                int pilih;
+                do {
+                    cout << "\n=== MENU VENDOR: " << v.getNamaToko() << " ===\n";
+                    cout << "1. Tambah Penjualan\n";
+                    cout << "2. Lihat Semua Penjualan\n";
+                    cout << "0. Kembali ke Menu Utama\n";
+                    cout << "Pilih: ";
+                    if (!(cin >> pilih)) {
+                        clearCin();
+                        pilih = -1;
+                        continue;
+                    }
+                    cin.ignore();
+
+                    switch (pilih) {
+                        case 1: v.tambahPenjualan(); break;
+                        case 2: v.tampilkanPenjualan(); break;
+                        case 0: break;
+                        default: cout << "Pilihan tidak valid.\n"; break;
+                    }
+                } while (pilih != 0);
                 return;
             }
         }
@@ -249,7 +295,6 @@ private:
     }
 };
 
-// Catatan: untuk menjalankan program ini tambahkan ini di main.cpp
 /*
 int main() {
     AplikasiVendor app;
@@ -259,4 +304,3 @@ int main() {
 */
 
 #endif
-
