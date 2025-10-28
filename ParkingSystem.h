@@ -111,29 +111,35 @@ public:
 
     // --- FUNGSI INI DIMODIFIKASI ---
     // Kembalikan 'string' (nama slot)
-    string checkout(uint64_t ticketID) {
+    ParkingTicket selesaikanCheckout(uint64_t ticketID) {
         for (size_t i = 0; i < activeTickets.size(); ++i) {
             if (activeTickets[i].ticketID == ticketID) {
+                // 1. Hitung biaya
                 activeTickets[i].hitungBiaya();
-                string slotToVacate = activeTickets[i].parkingSlot; 
                 
+                // 2. Siapkan struk
                 cout << "\n--- Struk Parkir ---\n";
                 cout << "ID Tiket: " << activeTickets[i].ticketID << endl;
                 cout << "Plat Nomor: " << activeTickets[i].platNomor << endl;
                 cout << "Slot Parkir: " << activeTickets[i].parkingSlot << endl;
-                // (Tambahkan detail struk lain jika perlu)
                 cout << "Total Biaya: Rp" << activeTickets[i].biaya << endl;
                 cout << "Status: LUNAS" << endl;
                 cout << "--------------------\n";
 
-                ticketHistory.push_back(activeTickets[i]);
+                // 3. Salin tiketnya sebelum dihapus
+                ParkingTicket tiketSelesai = activeTickets[i];
+
+                // 4. Pindahkan ke history dan hapus dari aktif
+                ticketHistory.push_back(tiketSelesai);
                 activeTickets.erase(activeTickets.begin() + i);
                 saveHistory();
-                return slotToVacate; // Kembalikan nama slot
+
+                // 5. Kembalikan data tiket lengkap
+                return tiketSelesai; 
             }
         }
         cout << "Error: Tiket dengan ID " << ticketID << " tidak ditemukan." << endl;
-        return ""; // Kembalikan string kosong jika gagal
+        return ParkingTicket(); // Kembalikan tiket kosong (ID=0) jika gagal
     }
 
     // (displayActiveTickets tidak berubah)
