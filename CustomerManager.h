@@ -2,14 +2,17 @@
 #define CUSTOMER_MANAGER_H
 
 #include "Customer.h"
-#include <vector>
+#include "DynamicArray.hpp" 
+#include "json.hpp"  // Sertakan header JSON
+#include "RandomGenerator.hpp"
+
 #include <string>
-#include <fstream>   // BARU: Untuk operasi file (ifstream, ofstream)
-#include <filesystem> // BARU: Untuk operasi direktori
+#include <fstream>   // Untuk operasi file (ifstream, ofstream)
+#include <filesystem> // Untuk operasi direktori
 #include <iostream>
 #include <limits> // Diperlukan untuk numeric_limits
-#include "json.hpp"  // BARU: Sertakan header JSON
-#include "RandomGenerator.hpp"
+
+
 // Class CustomerManager bertanggung jawab untuk mengelola seluruh data customer.
 // Ini termasuk menambah, mencari, dan menampilkan customer.
 
@@ -23,14 +26,14 @@ using json = nlohmann::json;
 
 class CustomerManager {
 private:
-    vector<Customer> daftarCustomer; // In-memory list of customers
-    string customerDataDir; // NEW: Directory to store individual customer JSON files
+    DynamicArray<Customer> daftarCustomer; // DIUBAH: Menggunakan DynamicArray, bukan vector
+    string customerDataDir; // Directory to store individual customer JSON files
 
     bool apakahIDExists(const string& id) const;
     
 
 public:
-    // BARU: Constructor sekarang menerima nama file sebagai argumen
+    // Constructor sekarang menerima nama file sebagai argumen
     CustomerManager(const string& filename);
 
     void tambahCustomer();
@@ -41,11 +44,11 @@ public:
         cout << "[Info] Berhasil memuat " << daftarCustomer.size() << " data customer dari direktori " << customerDataDir << endl;
     }
 
-    // BARU: Method publik untuk memuat data dari file (dipanggil di constructor)
+    // Method publik untuk memuat data dari file (dipanggil di constructor)
     void muatDariFile();
 };
 
-// BARU: Constructor diubah untuk menerima nama file dan langsung memuat data
+// Constructor diubah untuk menerima nama file dan langsung memuat data
 CustomerManager::CustomerManager(const string& dataDir) : customerDataDir(dataDir) {
     // Pastikan direktori ada
     if (!fs::exists(customerDataDir)) {
@@ -55,7 +58,7 @@ CustomerManager::CustomerManager(const string& dataDir) : customerDataDir(dataDi
     muatDariFile();
 }
 
-// BARU: Implementasi untuk memuat data dari file JSON
+// Implementasi untuk memuat data dari file JSON
 void CustomerManager::muatDariFile() {
     daftarCustomer.clear(); // Bersihkan data yang ada di memori sebelum memuat ulang
 
@@ -73,7 +76,9 @@ void CustomerManager::muatDariFile() {
             }
             try {
                 json customerJson = json::parse(file);
-                daftarCustomer.emplace_back(customerJson); // Menggunakan constructor Customer(json)
+                // DIUBAH: DynamicArray tidak punya emplace_back, jadi gunakan push_back 
+                // dengan memanggil constructor Customer secara eksplisit.
+                daftarCustomer.push_back(Customer(customerJson)); 
             } catch (json::parse_error& e) {
                 cerr << "Error parsing JSON from " << entry.path() << ": " << e.what() << endl;
             }
@@ -83,6 +88,7 @@ void CustomerManager::muatDariFile() {
 }
 
 bool CustomerManager::apakahIDExists(const string& id) const {
+    // Range-based for loop tetap bekerja karena DynamicArray memiliki begin() dan end()
     for (const auto& customer : daftarCustomer) {
         if (customer.getID() == id) {
             return true;
@@ -132,6 +138,7 @@ void CustomerManager::tambahCustomer() {
 }
 
 Customer* CustomerManager::cariCustomer(const string& id) {
+    // Loop ini bekerja karena DynamicArray mengembalikan pointer di begin() dan end()
     for (auto& customer : daftarCustomer) {
         if (customer.getID() == id) {
             return &customer; // Mengembalikan alamat dari objek customer yang cocok
@@ -151,6 +158,4 @@ void CustomerManager::tampilkanSemuaCustomer() const {
     }
 }
 
-
-
-#endif 
+#endif

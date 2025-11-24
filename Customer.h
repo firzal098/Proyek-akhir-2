@@ -2,7 +2,6 @@
 #define CUSTOMER_H
 
 #include <string>
-#include <vector>
 #include <iostream>
 #include <fstream>
 #include "json.hpp" // BARU: Sertakan header library JSON
@@ -26,6 +25,8 @@ public:
 
     // BARU: Constructor untuk membuat objek Customer dari data JSON
     Customer(const json& j);
+
+    Customer() {};
 
     // Method lain tidak berubah
     void displayInfo() const;
