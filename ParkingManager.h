@@ -2,7 +2,6 @@
 #define PARKING_MANAGER_H
 
 #include <iostream>
-#include <vector>
 #include <string>
 #include <limits>
 #include <conio.h>
@@ -11,6 +10,7 @@
 #include <fstream> // <-- TAMBAHKAN INI
 #include "ParkingSystem.h"
 #include "json.hpp" // <-- TAMBAHKAN INI
+#include "StaticArray.hpp" // <-- TAMBAHKAN INI
 
 using namespace std;
 using json = nlohmann::json;
@@ -20,9 +20,7 @@ private:
     ParkingSystem parkingSys; // "Bos" memiliki "Otak"
 
     // --- PETA MILIK "BOS" ---
-    int totalRows;
-    int totalCols;
-    vector<vector<string>> slotMap; 
+    StaticArray<StaticArray<string, 10>, 5> slotMap; 
 
     // --- DATABASE POIN MILIK "BOS" ---
     map<string, int> loyaltyPoints; // Map [PlatNomor -> Poin]
@@ -30,12 +28,8 @@ private:
 
     // --- FUNGSI HELPER PETA ---
     void initializeParkingMap() {
-        totalRows = 5;
-        totalCols = 10;
-        slotMap.resize(totalRows);
-        for (int i = 0; i < totalRows; ++i) {
-            slotMap[i].resize(totalCols);
-            for (int j = 0; j < totalCols; ++j) {
+        for (size_t i = 0; i < slotMap.size(); ++i) {
+            for (size_t j = 0; j < slotMap[i].size(); ++j) {
                 char rowChar = 'A' + i;
                 slotMap[i][j] = rowChar + to_string(j + 1);
             }
@@ -74,8 +68,8 @@ public:
     void displayParkingMap() {
         system("cls");
         cout << "== PETA STATUS PARKIR ==\n\n";
-        for (int i = 0; i < totalRows; ++i) {
-            for (int j = 0; j < totalCols; ++j) {
+        for (size_t i = 0; i < slotMap.size(); ++i) {
+            for (size_t j = 0; j < slotMap[i].size(); ++j) {
                 cout << "[" << setw(3) << slotMap[i][j] << "] ";
             }
             cout << "\n";
@@ -105,9 +99,9 @@ public:
     void vacateSlot(string slotName) {
         char rowChar = 'A' + (slotName[0] - 'A');
         int colNum = stoi(slotName.substr(1));
-        int rowIndex = rowChar - 'A';
-        int colIndex = colNum - 1;
-        if (rowIndex >= 0 && rowIndex < totalRows && colIndex >= 0 && colIndex < totalCols) {
+        size_t rowIndex = rowChar - 'A';
+        size_t colIndex = colNum - 1;
+        if (rowIndex >= 0 && rowIndex < slotMap.size() && colIndex >= 0 && colIndex < slotMap[0].size()) {
             slotMap[rowIndex][colIndex] = slotName;
         }
     }
