@@ -1,10 +1,10 @@
 [
     {
-<<<<<<< HEAD
-        "email": "firzal@gamail.com",
-        "id": "ff22ed",
-        "nama": "Firzal Akbar Ramadhan",
-        "telepon": "082180205923"
+        "email": "firzalyt@gmail.com",
+        "id": "faa",
+        "nama": "firzal akbar ramadhan",
+        "password": "sosidfubn",
+        "telepon": "8218020239"
     },
     {
         "email": "deco@gmail.com",
@@ -17,12 +17,5 @@
         "id": "3576",
         "nama": "deco",
         "telepon": "0861238342"
-=======
-        "email": "firzalyt@gmail.com",
-        "id": "faa",
-        "nama": "firzal akbar ramadhan",
-        "password": "sosidfubn",
-        "telepon": "8218020239"
->>>>>>> 384eedd2d0de97434e27e0d73cac92e1edf33893
     }
 ]
