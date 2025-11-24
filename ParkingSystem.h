@@ -2,25 +2,25 @@
 #define PARKING_SYSTEM_H
 
 #include <iostream>
-#include <vector>
 #include <fstream>
 #include <iomanip> // Untuk put_time
 #include <string>
 #include "ParkingTicket.h"
-// HAPUS: #include "ParkingManager.h" 
 #include "json.hpp"
+#include "DoublyLinkedList.hpp" // <-- Menggunakan DoublyLinkedList Anda
 
 using namespace std;
 using json = nlohmann::json;
 
 class ParkingSystem {
 private:
-    vector<ParkingTicket> activeTickets; 
-    vector<ParkingTicket> ticketHistory; 
+    // MENGGUNAKAN DOUBLY LINKED LIST
+    DoublyLinkedList<ParkingTicket> activeTickets; 
+    DoublyLinkedList<ParkingTicket> ticketHistory; 
+    
     const string historyFile = "parking_history.json";
-    // HAPUS: ParkingManager manager;
 
-    // (Salin fungsi to_json dan from_json kamu ke sini...)
+    // --- Helper JSON ---
     void to_json(json& j, const ParkingTicket& t) {
         j = json{
             {"ticketID", t.ticketID}, {"customerID", t.customerID},
@@ -46,14 +46,25 @@ private:
         }
     }
 
-    // (Salin fungsi saveHistory dan loadHistory kamu ke sini...)
+    // Fungsi menyimpan history dengan metode rotasi (karena tidak ada iterator)
     void saveHistory() {
-        json j_history;
-        for (const auto& ticket : ticketHistory) {
+        json j_history = json::array();
+        
+        size_t historyCount = ticketHistory.getSize();
+        for (size_t i = 0; i < historyCount; ++i) {
+            // Ambil data paling depan
+            ParkingTicket t = ticketHistory.front();
+            ticketHistory.pop_front();
+
+            // Masukkan ke JSON
             json j_ticket;
-            to_json(j_ticket, ticket);
+            to_json(j_ticket, t);
             j_history.push_back(j_ticket);
+
+            // Kembalikan ke belakang list (Rotasi) agar urutan tetap
+            ticketHistory.push_back(t);
         }
+
         ofstream file(historyFile);
         if (file.is_open()) {
             file << j_history.dump(4);
@@ -67,7 +78,6 @@ private:
         ifstream file(historyFile);
         if (file.is_open()) {
             if (file.peek() == ifstream::traits_type::eof()) {
-                cout << "File riwayat parkir kosong." << endl;
                 file.close();
                 return;
             }
@@ -81,83 +91,113 @@ private:
                 }
             }
             file.close();
-            cout << "Riwayat parkir berhasil dimuat." << endl;
-        } else {
-            cout << "File riwayat tidak ditemukan." << endl;
+            // cout << "Riwayat parkir berhasil dimuat." << endl;
         }
     }
-
 
 public:
     ParkingSystem() {
         loadHistory();
     }
 
-    // --- FUNGSI INI DIMODIFIKASI ---
-    // Kembalikan 'bool' (true/false)
+    // --- CREATE TICKET ---
     bool createTicket(int customerID, const string& platNomor, const string& slot) {
-        for(const auto& ticket : activeTickets) {
-            if (ticket.platNomor == platNomor) {
-                cout << "Error: Kendaraan " << platNomor << " sudah terparkir." << endl;
-                return false; // Gagal
+        // Cek duplikasi dengan teknik rotasi
+        bool exists = false;
+        size_t count = activeTickets.getSize(); // Gunakan getSize() sesuai file Anda
+
+        for (size_t i = 0; i < count; ++i) {
+            ParkingTicket t = activeTickets.front();
+            activeTickets.pop_front();
+            
+            if (t.platNomor == platNomor) {
+                exists = true;
             }
+            
+            // Kembalikan ke list
+            activeTickets.push_back(t);
         }
+
+        if (exists) {
+            cout << "Error: Kendaraan " << platNomor << " sudah terparkir." << endl;
+            return false;
+        }
+
         ParkingTicket newTicket(customerID, platNomor, slot); 
         activeTickets.push_back(newTicket);
         cout << "Tiket berhasil dibuat untuk plat " << platNomor << " di slot " << slot << endl;
         cout << "ID Tiket: " << newTicket.ticketID << endl;
-        return true; // Sukses
+        return true; 
     }
 
-    // --- FUNGSI INI DIMODIFIKASI ---
-    // Kembalikan 'string' (nama slot)
+    // --- CHECKOUT ---
     ParkingTicket selesaikanCheckout(uint64_t ticketID) {
-        for (size_t i = 0; i < activeTickets.size(); ++i) {
-            if (activeTickets[i].ticketID == ticketID) {
-                // 1. Hitung biaya
-                activeTickets[i].hitungBiaya();
-                
-                // 2. Siapkan struk
+        ParkingTicket ticketFound;
+        bool isFound = false;
+
+        size_t count = activeTickets.getSize();
+        // Loop untuk mencari tiket dan menghapusnya (filter)
+        for (size_t i = 0; i < count; ++i) {
+            ParkingTicket t = activeTickets.front();
+            activeTickets.pop_front();
+
+            if (t.ticketID == ticketID && !isFound) {
+                // KETEMU! Proses checkout
+                isFound = true;
+                t.hitungBiaya();
+
                 cout << "\n--- Struk Parkir ---\n";
-                cout << "ID Tiket: " << activeTickets[i].ticketID << endl;
-                cout << "Plat Nomor: " << activeTickets[i].platNomor << endl;
-                cout << "Slot Parkir: " << activeTickets[i].parkingSlot << endl;
-                cout << "Total Biaya: Rp" << activeTickets[i].biaya << endl;
+                cout << "ID Tiket: " << t.ticketID << endl;
+                cout << "Plat Nomor: " << t.platNomor << endl;
+                cout << "Slot Parkir: " << t.parkingSlot << endl;
+                cout << "Total Biaya: Rp" << t.biaya << endl;
                 cout << "Status: LUNAS" << endl;
                 cout << "--------------------\n";
 
-                // 3. Salin tiketnya sebelum dihapus
-                ParkingTicket tiketSelesai = activeTickets[i];
-
-                // 4. Pindahkan ke history dan hapus dari aktif
-                ticketHistory.push_back(tiketSelesai);
-                activeTickets.erase(activeTickets.begin() + i);
-                saveHistory();
-
-                // 5. Kembalikan data tiket lengkap
-                return tiketSelesai; 
+                ticketFound = t;
+                
+                // Simpan ke history
+                ticketHistory.push_back(t);
+                
+                // JANGAN push_back ke activeTickets lagi (artinya dihapus dari aktif)
+            } else {
+                // Bukan tiket yang dicari, kembalikan ke list
+                activeTickets.push_back(t);
             }
         }
-        cout << "Error: Tiket dengan ID " << ticketID << " tidak ditemukan." << endl;
-        return ParkingTicket(); // Kembalikan tiket kosong (ID=0) jika gagal
+
+        if (isFound) {
+            saveHistory();
+            return ticketFound;
+        } else {
+            cout << "Error: Tiket dengan ID " << ticketID << " tidak ditemukan." << endl;
+            return ParkingTicket(); // Return kosong
+        }
     }
 
-    // (displayActiveTickets tidak berubah)
-    void displayActiveTickets() const {
+    // --- DISPLAY ACTIVE ---
+    // Hapus 'const' karena kita perlu memodifikasi list sementara (pop/push) untuk membacanya
+    void displayActiveTickets() {
         cout << "\n--- Kendaraan Saat Ini di Dalam Parkir ---\n";
         if (activeTickets.empty()) {
             cout << "Tidak ada kendaraan di dalam.\n";
             return;
         }
-        for(const auto& ticket : activeTickets) {
-            cout << "ID Tiket: " << ticket.ticketID 
-                 << ", Plat: " << ticket.platNomor 
-                 << ", Slot: " << ticket.parkingSlot << endl;
+        
+        size_t count = activeTickets.getSize();
+        for(size_t i = 0; i < count; ++i) {
+            ParkingTicket t = activeTickets.front();
+            activeTickets.pop_front();
+
+            cout << "ID Tiket: " << t.ticketID 
+                 << ", Plat: " << t.platNomor 
+                 << ", Slot: " << t.parkingSlot << endl;
+
+            // Kembalikan ke list
+            activeTickets.push_back(t);
         }
         cout << "-------------------------------------------\n";
     }
-
-    // HAPUS FUNGSI: displayMap() dan isSlotValid()
 };
 
 #endif // PARKING_SYSTEM_H
