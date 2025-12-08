@@ -1,53 +1,54 @@
 #ifndef STACK_HPP
 #define STACK_HPP
 
-#include "DynamicArray.hpp"
-// Kita asumsikan DynamicArray.hpp ada di direktori yang sama
-// dan memiliki "using namespace std;" di dalamnya berdasarkan permintaan sebelumnya.
+#include "DoublyLinkedList.hpp"
+#include <stdexcept> // For std::out_of_range
+
+// Kita asumsikan DoublyLinkedList.hpp ada di direktori yang sama
 
 template <typename T>
 class Stack {
 private:
     // Wadah (container) yang mendasarinya
-    DynamicArray<T> m_container;
+    DoublyLinkedList<T> m_container;
 
 public:
     // --- Konstruktor ---
-    Stack() {} // Konstruktor default bergantung pada default milik DynamicArray
+    Stack() {} // Konstruktor default bergantung pada default milik DoublyLinkedList
 
     // --- Operasi Inti ---
 
-    // Push: Menambahkan elemen ke atas (akhir array)
+    // Push: Menambahkan elemen ke atas (akhir list)
     void push(const T& value) {
         m_container.push_back(value);
     }
 
-    // Pop: Menghapus elemen teratas (akhir array)
+    // Pop: Menghapus elemen teratas (akhir list)
     void pop() {
         if (!empty()) {
             m_container.pop_back();
         } else {
             // Tergantung desain, kita bisa melempar exception atau mengabaikannya
             // Untuk kesederhanaan/keamanan, kita lempar exception
-             throw out_of_range("Stack underflow: Tidak bisa pop dari stack kosong");
+             throw std::out_of_range("Stack underflow: Tidak bisa pop dari stack kosong");
         }
     }
 
     // Top: Mengembalikan referensi ke elemen teratas
     T& top() {
         if (empty()) {
-            throw out_of_range("Stack kosong: Tidak bisa mengakses top");
+            throw std::out_of_range("Stack kosong: Tidak bisa mengakses top");
         }
-        // Bagian "top" (atas) adalah elemen terakhir yang ditambahkan, yaitu di size - 1
-        return m_container[m_container.size() - 1];
+        // Bagian "top" (atas) adalah elemen terakhir yang ditambahkan, yaitu di "back"
+        return m_container.back();
     }
 
     // Versi const dari Top
     const T& top() const {
         if (empty()) {
-            throw out_of_range("Stack kosong: Tidak bisa mengakses top");
+            throw std::out_of_range("Stack kosong: Tidak bisa mengakses top");
         }
-        return m_container[m_container.size() - 1];
+        return m_container.back();
     }
 
     // --- Utilitas ---

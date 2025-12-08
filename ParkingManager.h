@@ -10,7 +10,7 @@
 #include <fstream> // <-- TAMBAHKAN INI
 #include "ParkingSystem.h"
 #include "json.hpp" // <-- TAMBAHKAN INI
-#include "StaticArray.hpp" // <-- TAMBAHKAN INI
+#include "DoublyLinkedList.hpp" // <-- DIUBAH
 
 using namespace std;
 using json = nlohmann::json;
@@ -20,7 +20,7 @@ private:
     ParkingSystem parkingSys; // "Bos" memiliki "Otak"
 
     // --- PETA MILIK "BOS" ---
-    StaticArray<StaticArray<string, 10>, 5> slotMap; 
+    DoublyLinkedList<DoublyLinkedList<string>> slotMap; // <-- DIUBAH
 
     // --- DATABASE POIN MILIK "BOS" ---
     map<string, int> loyaltyPoints; // Map [PlatNomor -> Poin]
@@ -28,11 +28,14 @@ private:
 
     // --- FUNGSI HELPER PETA ---
     void initializeParkingMap() {
-        for (size_t i = 0; i < slotMap.size(); ++i) {
-            for (size_t j = 0; j < slotMap[i].size(); ++j) {
+        slotMap.clear(); // Hapus data lama jika ada
+        for (int i = 0; i < 5; ++i) {
+            DoublyLinkedList<string> row;
+            for (int j = 0; j < 10; ++j) {
                 char rowChar = 'A' + i;
-                slotMap[i][j] = rowChar + to_string(j + 1);
+                row.push_back(rowChar + to_string(j + 1));
             }
+            slotMap.push_back(row);
         }
     }
 
@@ -40,12 +43,21 @@ private:
     void loadLoyaltyPoints() {
         ifstream file(loyaltyFile);
         if (file.is_open()) {
-            json j_points;
-            file >> j_points;
-            // Konversi dari JSON object ke std::map
-            loyaltyPoints = j_points.get<map<string, int>>(); 
+            try {
+                json j_points;
+                // Cek jika file kosong sebelum parsing
+                if (file.peek() == ifstream::traits_type::eof()) {
+                    cout << "File poin loyalitas kosong." << endl;
+                    file.close();
+                    return;
+                }
+                file >> j_points;
+                loyaltyPoints = j_points.get<map<string, int>>();
+                cout << "Data poin loyalitas dimuat." << endl;
+            } catch (const json::parse_error& e) {
+                cerr << "Error parsing " << loyaltyFile << ": " << e.what() << endl;
+            }
             file.close();
-            cout << "Data poin loyalitas dimuat." << endl;
         } else {
             cout << "File poin loyalitas tidak ditemukan, akan dibuat baru." << endl;
         }
@@ -103,6 +115,17 @@ public:
         size_t colIndex = colNum - 1;
         if (rowIndex >= 0 && rowIndex < slotMap.size() && colIndex >= 0 && colIndex < slotMap[0].size()) {
             slotMap[rowIndex][colIndex] = slotName;
+        }
+    }
+
+    // --- FUNGSI BARU UNTUK CEK POIN ---
+    void checkLoyaltyPoints(const string& plat) const {
+        // Cek pakai .find() karena map::operator[] tidak const
+        auto it = loyaltyPoints.find(plat);
+        if (it != loyaltyPoints.end()) {
+            cout << "Kendaraan " << plat << " memiliki " << it->second << " poin." << endl;
+        } else {
+            cout << "Kendaraan " << plat << " belum memiliki poin." << endl;
         }
     }
 
@@ -227,12 +250,7 @@ public:
                     cout << "--- Cek Poin Loyalitas ---" << endl;
                     cout << "Masukkan Plat Nomor: ";
                     getline(cin, plat);
-                    
-                    if (loyaltyPoints.find(plat) != loyaltyPoints.end()) {
-                        cout << "Kendaraan " << plat << " memiliki " << loyaltyPoints[plat] << " poin." << endl;
-                    } else {
-                        cout << "Kendaraan " << plat << " belum memiliki poin." << endl;
-                    }
+                    checkLoyaltyPoints(plat); // Panggil fungsi baru
                     getch();
                     break;
                 }

@@ -21,7 +21,7 @@ class DoublyLinkedList {
 private:
     Node<T>* head;
     Node<T>* tail;
-    size_t size;
+    size_t m_size;
     bool isCircular; // Penanda apakah list ini Circular atau tidak
 
     // Fungsi pembantu untuk menghubungkan ujung-ujung jika Circular
@@ -42,13 +42,48 @@ public:
     explicit DoublyLinkedList(bool circular = false) {
         head = nullptr;
         tail = nullptr;
-        size = 0;
+        m_size = 0;
         isCircular = circular;
     }
 
     // Destruktor
     ~DoublyLinkedList() {
         clear();
+    }
+
+    // --- Rule of Three: Copy Constructor ---
+    DoublyLinkedList(const DoublyLinkedList& other) {
+        // Inisialisasi state awal sama seperti konstruktor default
+        head = nullptr;
+        tail = nullptr;
+        m_size = 0;
+        isCircular = other.isCircular;
+
+        // Lakukan deep copy dengan menyalin setiap elemen
+        for (ConstIterator it = other.begin(); it != other.end(); ++it) {
+            push_back(*it);
+        }
+    }
+
+    // --- Rule of Three: Copy Assignment Operator ---
+    DoublyLinkedList& operator=(const DoublyLinkedList& other) {
+        // 1. Lindungi dari self-assignment (cth: list1 = list1)
+        if (this != &other) {
+            // 2. Hapus semua data yang ada di list saat ini
+            clear();
+
+            // 3. Inisialisasi ulang state (jika diperlukan)
+            isCircular = other.isCircular;
+            head = tail = nullptr; // clear() sudah melakukannya, tapi ini eksplisit
+            m_size = 0;
+            
+            // 4. Lakukan deep copy elemen dari 'other'
+            for (ConstIterator it = other.begin(); it != other.end(); ++it) {
+                push_back(*it);
+            }
+        }
+        // 5. Kembalikan reference ke objek saat ini untuk chaining (cth: a = b = c)
+        return *this;
     }
 
     // --- Operasi Penambahan (Insertion) ---
@@ -67,7 +102,7 @@ public:
 
         // Jika circular, sambungkan kembali ekor ke kepala
         perbaruiLinkCircular();
-        size++;
+        m_size++;
     }
 
     // Menambah data di depan (Kepala)
@@ -84,7 +119,7 @@ public:
 
         // Jika circular, sambungkan kembali ekor ke kepala
         perbaruiLinkCircular();
-        size++;
+        m_size++;
     }
 
     // --- Operasi Penghapusan (Deletion) ---
@@ -106,7 +141,7 @@ public:
 
         delete temp;
         perbaruiLinkCircular(); // Pastikan link benar setelah penghapusan
-        size--;
+        m_size--;
     }
 
     // Menghapus data paling depan
@@ -125,7 +160,7 @@ public:
 
         delete temp;
         perbaruiLinkCircular();
-        size--;
+        m_size--;
     }
 
     // --- Utilitas ---
@@ -148,7 +183,7 @@ public:
 
         head = nullptr;
         tail = nullptr;
-        size = 0;
+        m_size = 0;
     }
 
     // Menampilkan isi list
@@ -203,7 +238,65 @@ public:
         cout << "]" << endl;
     }
 
-    // Akses Data
+    // --- Iterator Support ---
+    class Iterator {
+    public:
+        using iterator_category = std::bidirectional_iterator_tag;
+        using value_type = T;
+        using difference_type = std::ptrdiff_t;
+        using pointer = T*;
+        using reference = T&;
+
+        Iterator(Node<T>* ptr) : m_ptr(ptr) {}
+
+        reference operator*() const { return m_ptr->data; }
+        pointer operator->() { return &(m_ptr->data); }
+
+        Iterator& operator++() { m_ptr = m_ptr->next; return *this; }
+        Iterator operator++(int) { Iterator tmp = *this; ++(*this); return tmp; }
+
+        friend bool operator==(const Iterator& a, const Iterator& b) { return a.m_ptr == b.m_ptr; };
+        friend bool operator!=(const Iterator& a, const Iterator& b) { return a.m_ptr != b.m_ptr; };
+
+    private:
+        Node<T>* m_ptr;
+    };
+
+    class ConstIterator {
+    public:
+        using iterator_category = std::bidirectional_iterator_tag;
+        using value_type = const T;
+        using difference_type = std::ptrdiff_t;
+        using pointer = const T*;
+        using reference = const T&;
+
+        ConstIterator(const Node<T>* ptr) : m_ptr(ptr) {}
+
+        reference operator*() const { return m_ptr->data; }
+        pointer operator->() const { return &(m_ptr->data); }
+
+        ConstIterator& operator++() { m_ptr = m_ptr->next; return *this; }
+        ConstIterator operator++(int) { ConstIterator tmp = *this; ++(*this); return tmp; }
+
+        friend bool operator==(const ConstIterator& a, const ConstIterator& b) { return a.m_ptr == b.m_ptr; };
+        friend bool operator!=(const ConstIterator& a, const ConstIterator& b) { return a.m_ptr != b.m_ptr; };
+
+    private:
+        const Node<T>* m_ptr;
+    };
+
+    // Non-const iterators
+    Iterator begin() { return Iterator(head); }
+    Iterator end() { return Iterator(nullptr); }
+
+    // Const iterators
+    ConstIterator begin() const { return ConstIterator(head); }
+    ConstIterator end() const { return ConstIterator(nullptr); }
+    ConstIterator cbegin() const { return ConstIterator(head); }
+    ConstIterator cend() const { return ConstIterator(nullptr); }
+
+
+    // --- Akses Data ---
     T& front() {
         if (empty()) throw out_of_range("List kosong");
         return head->data;
@@ -213,9 +306,20 @@ public:
         if (empty()) throw out_of_range("List kosong");
         return tail->data;
     }
+    
+    T& operator[](size_t index) {
+        if (index >= m_size) {
+            throw out_of_range("Index di luar jangkauan");
+        }
+        Node<T>* current = head;
+        for (size_t i = 0; i < index; ++i) {
+            current = current->next;
+        }
+        return current->data;
+    }
 
-    bool empty() const { return size == 0; }
-    size_t getSize() const { return size; }
+    bool empty() const { return m_size == 0; }
+    size_t size() const { return m_size; }
 };
 
 #endif // DOUBLY_LINKED_LIST_HPP

@@ -37,6 +37,8 @@ public:
     json toJson() const;
 
     void save() const;
+
+    bool verifyPassword(const string& pw) const;
 };
 
 #endif // CUSTOMER_H
@@ -90,4 +92,9 @@ json Customer::toJson() const {
         {"email", email},
         {"password", password},
     };
+}
+
+// BARU: Implementasi verifikasi password
+bool Customer::verifyPassword(const string& pw) const {
+    return this->password == pw;
 }

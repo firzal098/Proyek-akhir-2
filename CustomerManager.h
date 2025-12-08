@@ -2,7 +2,7 @@
 #define CUSTOMER_MANAGER_H
 
 #include "Customer.h"
-#include "DynamicArray.hpp" 
+#include "DoublyLinkedList.hpp" 
 #include "json.hpp"  // Sertakan header JSON
 #include "RandomGenerator.hpp"
 
@@ -11,6 +11,7 @@
 #include <filesystem> // Untuk operasi direktori
 #include <iostream>
 #include <limits> // Diperlukan untuk numeric_limits
+#include <conio.h>
 
 
 // Class CustomerManager bertanggung jawab untuk mengelola seluruh data customer.
@@ -26,7 +27,7 @@ using json = nlohmann::json;
 
 class CustomerManager {
 private:
-    DynamicArray<Customer> daftarCustomer; // DIUBAH: Menggunakan DynamicArray, bukan vector
+    DoublyLinkedList<Customer> daftarCustomer; // DIUBAH: Menggunakan DoublyLinkedList, bukan DynamicArray
     string customerDataDir; // Directory to store individual customer JSON files
 
     bool apakahIDExists(const string& id) const;
@@ -102,18 +103,21 @@ void CustomerManager::tambahCustomer() {
 
     cout << "\n--- Pendaftaran Customer Baru ---" << endl;
 
-    // Meminta dan memvalidasi ID
+    // Membersihkan buffer sebelum meminta ID
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+    // Meminta dan memvalidasi ID dari user
     while (true) {
-        id = generateRandomString();
-        if (apakahIDExists(id)) {
-           // cout << "ID '" << id << "' sudah digunakan. Silakan gunakan ID lain." << endl;
+        cout << "Masukkan ID yang diinginkan: ";
+        getline(cin, id);
+        if (id.empty()) {
+            cout << "ID tidak boleh kosong." << endl;
+        } else if (apakahIDExists(id)) {
+           cout << "ID '" << id << "' sudah digunakan. Silakan gunakan ID lain." << endl;
         } else {
             break;
         }
     }
-    
-    // Membersihkan buffer input setelah `cin >>`
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
     cout << "Masukkan Nama Lengkap: ";
     getline(cin, nama);
@@ -135,6 +139,8 @@ void CustomerManager::tambahCustomer() {
     newCustomer.save();
     
     cout << "\n>> Customer '" << nama << "' berhasil didaftarkan dan data telah disimpan! <<" << endl;
+    cout << "Silakan login dengan ID dan password Anda." << endl;
+    getch();
 }
 
 Customer* CustomerManager::cariCustomer(const string& id) {

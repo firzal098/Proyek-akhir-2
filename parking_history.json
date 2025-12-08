@@ -1,12 +1,3 @@
 [
-    {
-        "biaya": 3000.0,
-        "customerID": -1,
-        "parkingSlot": "A3",
-        "platNomor": "ba12934mae",
-        "status": "PAID",
-        "ticketID": 1761577497903256000,
-        "waktuKeluar": 1761577641,
-        "waktuMasuk": 1761577497
-    }
+   
 ]

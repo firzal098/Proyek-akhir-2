@@ -1,51 +1,164 @@
 #include "CustomerManager.h"
 #include "ParkingManager.h"
 #include "VendorManager.h"
+#include "vendor.h"
 #include <iostream>
 #include <string>
 #include <limits>
 #include <conio.h>
-#include "vendor.h"
 
-void tampilkanMenu() {
+using namespace std;
 
-    std::cout << "\n===== Sistem Manajemen Customer Mall =====" << std::endl;
+// Forward declarations for functions now in this file
+string handleLogin(CustomerManager& customerMgr, Customer** customerOut);
+void clientMenu(Customer* loggedInCustomer, ParkingManager& parkingMgr);
+void adminMenu(CustomerManager& customerMgr, ParkingManager& parkingMgr, AplikasiVendor& vendorMgr);
 
-    std::cout << "1. Tambah Customer Baru" << std::endl;
-    std::cout << "2. Tampilkan Semua Customer" << std::endl;
-    std::cout << "3. Cari Customer (berdasarkan ID)" << std::endl;
-    std::cout << "4. Parkir" << std::endl;
-    std::cout << "5. Vendor" << std::endl;
-    std::cout << "6. Keluar" << std::endl;
-    std::cout << "========================================" << std::endl;
-    std::cout << "Pilih opsi: ";
-    std::cout << "wajib angka (1,2,3,4,5,6) ";
+// --- Implementation from client.cpp ---
+
+// Function to handle the login process
+string handleLogin(CustomerManager& customerMgr, Customer** customerOut) {
+    string choice;
+    cout << "\n--- Selamat Datang! ---" << endl;
+    cout << "1. Login" << endl;
+    cout << "2. Register" << endl;
+    cout << "3. Exit" << endl;
+    cout << "=======================" << endl;
+    cout << "Pilihan: ";
+    cin >> choice;
+
+    if (choice == "1") {
+        string id;
+        string password;
+        cout << "\n--- Silakan Login ---" << endl;
+        cout << "ID: ";
+        cin >> id;
+        cout << "Password: ";
+        cin >> password;
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+        if (id == "admin" && password == "123") {
+            cout << "\n>> Login sebagai Admin berhasil! <<" << endl;
+            getch();
+            return "admin";
+        }
+
+        Customer* foundCustomer = customerMgr.cariCustomer(id);
+        if (foundCustomer != nullptr && foundCustomer->verifyPassword(password)) {
+            cout << "\n>> Login sebagai Customer '" << foundCustomer->getNama() << "' berhasil! <<" << endl;
+            *customerOut = foundCustomer;
+            getch();
+            return "customer";
+        }
+
+        cout << "\n>> ID atau Password salah. Coba lagi. <<" << endl;
+        getch();
+        return "failed";
+
+    } else if (choice == "2") {
+        system("cls");
+        customerMgr.tambahCustomer(); // This function now handles the full registration UI
+        return "registered"; // Signal to main loop that registration happened
+    
+    } else if (choice == "3") {
+        return "exit";
+    
+    } else {
+        cout << "\nPilihan tidak valid. Coba lagi." << endl;
+        getch();
+        return "failed";
+    }
 }
 
-void admin() {
-    // BARU: Saat membuat objek CustomerManager, kita berikan nama file database-nya.
-    // File "customers.json" akan dibuat di folder yang sama dengan main.cpp.
-    CustomerManager customerMgr("customers"); // Menggunakan direktori "customers"
-    ParkingManager parkingMgr;
-    AplikasiVendor vendorMgr;
-    
+// Function to display the client menu
+void clientMenu(Customer* loggedInCustomer, ParkingManager& parkingMgr) {
+    if (loggedInCustomer == nullptr) {
+        return;
+    }
+
     int pilihan = 0;
-
-    // Logika menu utama tidak perlu diubah sama sekali
-    while (pilihan != 6) {
-        
+    while (pilihan != 4) {
         system("cls");
-        customerMgr.logJumlahCustomer();
-        tampilkanMenu();
+        cout << "--- Selamat Datang, " << loggedInCustomer->getNama() << "! ---" << endl;
+        cout << "1. Lihat Informasi Akun Saya" << endl;
+        cout << "2. Cek Status Parkir Aktif" << endl;
+        cout << "3. Cek Poin Loyalitas Saya" << endl;
+        cout << "4. Logout" << endl;
+        cout << "=================================" << endl;
+        cout << "Pilih opsi: ";
+        cin >> pilihan;
 
-        std::cin >> pilihan;
-
-        if (std::cin.fail()) {
-            std::cout << "Input tidak valid. Harap masukkan angka." << std::endl;
-            std::cin.clear();
-            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        if (cin.fail()) {
+            cout << "Input tidak valid." << endl;
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            getch();
             continue;
         }
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+        switch (pilihan) {
+            case 1:
+                system("cls");
+                cout << "--- Informasi Akun Anda ---" << endl;
+                loggedInCustomer->displayInfo();
+                getch();
+                break;
+            case 2:
+                system("cls");
+                parkingMgr.displayParkingMenu();
+                break;
+            case 3: {
+                system("cls");
+                string plat;
+                cout << "--- Cek Poin Loyalitas ---" << endl;
+                cout << "Masukkan Plat Nomor Anda: ";
+                getline(cin, plat);
+                parkingMgr.checkLoyaltyPoints(plat);
+                getch();
+                break;
+            }
+            case 4:
+                cout << "Logout berhasil. Kembali ke halaman login..." << endl;
+                getch();
+                break;
+            default:
+                cout << "Pilihan tidak valid." << endl;
+                getch();
+                break;
+        }
+    }
+}
+
+
+// The admin menu, refactored from the old admin() function
+void adminMenu(CustomerManager& customerMgr, ParkingManager& parkingMgr, AplikasiVendor& vendorMgr) {
+    int pilihan = 0;
+
+    while (pilihan != 6) {
+        system("cls");
+        cout << "--- ADMIN PANEL ---" << endl;
+        customerMgr.logJumlahCustomer();
+        
+        cout << "\n===== Sistem Manajemen Customer Mall =====" << endl;
+        cout << "1. Tambah Customer Baru" << endl;
+        cout << "2. Tampilkan Semua Customer" << endl;
+        cout << "3. Cari Customer (berdasarkan ID)" << endl;
+        cout << "4. Masuk ke Menu Parkir" << endl;
+        cout << "5. Masuk ke Menu Vendor" << endl;
+        cout << "6. Logout (Kembali ke Halaman Login)" << endl;
+        cout << "========================================" << endl;
+        cout << "Pilih opsi: ";
+        cin >> pilihan;
+
+        if (cin.fail()) {
+            cout << "Input tidak valid. Harap masukkan angka." << endl;
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            getch();
+            continue;
+        }
+        cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Clear buffer for getline
 
         switch (pilihan) {
             case 1:
@@ -60,15 +173,15 @@ void admin() {
                 break;
             case 3: {
                 system("cls");
-                std::string idCari;
-                std::cout << "Masukkan ID Customer yang ingin dicari: ";
-                std::cin >> idCari;
+                string idCari;
+                cout << "Masukkan ID Customer yang ingin dicari: ";
+                cin >> idCari;
                 Customer* foundCustomer = customerMgr.cariCustomer(idCari);
                 if (foundCustomer != nullptr) {
-                    std::cout << "\n>> Customer Ditemukan! <<" << std::endl;
+                    cout << "\n>> Customer Ditemukan! <<" << endl;
                     foundCustomer->displayInfo();
                 } else {
-                    std::cout << ">> Customer dengan ID '" << idCari << "' tidak ditemukan. <<" << std::endl;
+                    cout << ">> Customer dengan ID '" << idCari << "' tidak ditemukan. <<" << endl;
                 }
                 getch();
                 break;
@@ -76,7 +189,7 @@ void admin() {
             case 4:
                 system("cls");
                 parkingMgr.displayParkingMenu();
-                getch();
+                // getch() is handled inside displayParkingMenu loop
                 break;
             case 5:
                 system("cls");
@@ -84,24 +197,39 @@ void admin() {
                 getch();
                 break;
             case 6:
-                std::cout << "Terima kasih telah menggunakan sistem. Sampai jumpa!" << std::endl;
+                cout << "Logout berhasil. Kembali ke halaman login..." << endl;
                 getch();
                 break;
             default:
-                std::cout << "Pilihan tidak valid. Silakan coba lagi." << std::endl;
+                cout << "Pilihan tidak valid. Silakan coba lagi." << endl;
                 getch();
                 break;
         }
     }
-
 }
 
-void client() {
-
-}
- 
 int main() {
+    // Instantiate managers once
+    CustomerManager customerMgr("customers");
+    ParkingManager parkingMgr;
+    AplikasiVendor vendorMgr;
 
-    admin();
+    while (true) {
+        system("cls");
+        Customer* loggedInCustomer = nullptr;
+        string loginResult = handleLogin(customerMgr, &loggedInCustomer);
 
+        if (loginResult == "admin") {
+            adminMenu(customerMgr, parkingMgr, vendorMgr);
+        } else if (loginResult == "customer") {
+            clientMenu(loggedInCustomer, parkingMgr);
+        } else if (loginResult == "exit") {
+            cout << "Terima kasih telah menggunakan sistem. Sampai jumpa!" << endl;
+            getch();
+            break;
+        }
+        // If login "failed" or "registered", the loop will clear screen and repeat
+    }
+
+    return 0;
 }
