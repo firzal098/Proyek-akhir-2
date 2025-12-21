@@ -50,7 +50,7 @@ private:
     void saveHistory() {
         json j_history = json::array();
         
-        size_t historyCount = ticketHistory.getSize();
+        size_t historyCount = ticketHistory.size();
         for (size_t i = 0; i < historyCount; ++i) {
             // Ambil data paling depan
             ParkingTicket t = ticketHistory.front();
@@ -104,7 +104,7 @@ public:
     bool createTicket(int customerID, const string& platNomor, const string& slot) {
         // Cek duplikasi dengan teknik rotasi
         bool exists = false;
-        size_t count = activeTickets.getSize(); // Gunakan getSize() sesuai file Anda
+        size_t count = activeTickets.size(); // Gunakan size() sesuai file Anda
 
         for (size_t i = 0; i < count; ++i) {
             ParkingTicket t = activeTickets.front();
@@ -135,7 +135,7 @@ public:
         ParkingTicket ticketFound;
         bool isFound = false;
 
-        size_t count = activeTickets.getSize();
+        size_t count = activeTickets.size();
         // Loop untuk mencari tiket dan menghapusnya (filter)
         for (size_t i = 0; i < count; ++i) {
             ParkingTicket t = activeTickets.front();
@@ -184,7 +184,7 @@ public:
             return;
         }
         
-        size_t count = activeTickets.getSize();
+        size_t count = activeTickets.size();
         for(size_t i = 0; i < count; ++i) {
             ParkingTicket t = activeTickets.front();
             activeTickets.pop_front();
