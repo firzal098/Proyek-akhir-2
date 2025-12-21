@@ -1,167 +1,151 @@
-#ifndef CUSTOMER_MANAGER_H
-#define CUSTOMER_MANAGER_H
-
+#ifndef MANAJER_PELANGGAN_H
+#define MANAJER_PELANGGAN_H
+ 
 #include "Customer.h"
 #include "DoublyLinkedList.hpp" 
-#include "json.hpp"  // Sertakan header JSON
+#include "PenyimpanFile.hpp" 
 #include "RandomGenerator.hpp"
 
 #include <string>
-#include <fstream>   // Untuk operasi file (ifstream, ofstream)
-#include <filesystem> // Untuk operasi direktori
 #include <iostream>
-#include <limits> // Diperlukan untuk numeric_limits
+#include <limits> 
 #include <conio.h>
 
-
-// Class CustomerManager bertanggung jawab untuk mengelola seluruh data customer.
-// Ini termasuk menambah, mencari, dan menampilkan customer.
-
-using namespace std; // Menggunakan namespace std untuk keringkasan
-namespace fs = std::filesystem; // Alias untuk std::filesystem
-
+using namespace std; 
 using namespace RandomUtils;
 
-// Menggunakan alias lagi
-using json = nlohmann::json;
-
-class CustomerManager {
+/**
+ * @class ManajerPelanggan
+ * @brief Mengelola semua operasi yang berkaitan dengan data pelanggan.
+ *
+ * Kelas ini bertanggung jawab untuk memuat, menyimpan, menambah, mencari,
+ * dan menampilkan data pelanggan. Ini bertindak sebagai lapisan abstraksi
+ * antara data mentah pelanggan dan logika aplikasi utama.
+ */
+class ManajerPelanggan {
 private:
-    DoublyLinkedList<Customer> daftarCustomer; // DIUBAH: Menggunakan DoublyLinkedList, bukan DynamicArray
-    string customerDataDir; // Directory to store individual customer JSON files
+    DoublyLinkedList<Pelanggan> daftarPelanggan; // Kontainer untuk menyimpan semua objek pelanggan.
+    string fileDataPelanggan;                   // Nama file database untuk menyimpan data pelanggan.
 
-    bool apakahIDExists(const string& id) const;
-    
+    /**
+     * @brief Memeriksa apakah sebuah ID pelanggan sudah ada dalam daftar.
+     * @param id ID yang akan diperiksa.
+     * @return true jika ID sudah ada, false jika belum.
+     */
+    bool apakahIDAda(const string& id) const {
+        // Iterasi melalui daftar pelanggan untuk mencari ID yang cocok.
+        for (auto it = daftarPelanggan.begin(); it != daftarPelanggan.end(); ++it) {
+            if (it->getId() == id) {
+                return true; // Ditemukan
+            }
+        }
+        return false; // Tidak ditemukan
+    }
 
 public:
-    // Constructor sekarang menerima nama file sebagai argumen
-    CustomerManager(const string& filename);
-
-    void tambahCustomer();
-    Customer* cariCustomer(const string& id);
-    void tampilkanSemuaCustomer() const;
-
-    void logJumlahCustomer() const {
-        cout << "[Info] Berhasil memuat " << daftarCustomer.size() << " data customer dari direktori " << customerDataDir << endl;
+    /**
+     * @brief Menyimpan seluruh daftar pelanggan ke dalam file.
+     * Menggunakan kelas PenyimpanFile untuk menangani proses serialisasi dan penulisan.
+     */
+    void simpanData() {
+        PenyimpanFile::simpanKeFile(fileDataPelanggan, daftarPelanggan, Pelanggan::serialisasi);
     }
 
-    // Method publik untuk memuat data dari file (dipanggil di constructor)
-    void muatDariFile();
+    /**
+     * @brief Konstruktor untuk ManajerPelanggan.
+     * @param namaFile Nama file database yang akan digunakan.
+     * Saat objek dibuat, secara otomatis memuat data pelanggan dari file.
+     */
+    ManajerPelanggan(const string& namaFile) : fileDataPelanggan(namaFile) {
+        // Memuat data dari file saat program pertama kali dijalankan.
+        PenyimpanFile::muatDariFile(fileDataPelanggan, daftarPelanggan, Pelanggan::deserialisasi);
+    }
+
+    /**
+     * @brief Menangani proses registrasi pelanggan baru.
+     * Meminta input dari pengguna untuk detail pelanggan, memvalidasi keunikan ID,
+     * membuat objek Pelanggan baru, dan menyimpannya.
+     */
+    void tambahPelanggan() {
+        string id, nama, telepon, email, password;
+
+        cout << "\n--- Registrasi Pelanggan Baru ---" << endl;
+        
+        // Loop untuk memastikan ID yang dimasukkan unik.
+        while (true) {
+            cout << "Masukkan ID Pelanggan: ";
+            getline(cin, id);
+            if (apakahIDAda(id)) {
+                cout << "Error: ID Pelanggan sudah digunakan! Silakan pilih ID lain." << endl;
+            } else {
+                break; // ID unik, lanjutkan proses.
+            }
+        }
+
+        // Meminta input untuk data pelanggan lainnya.
+        cout << "Masukkan Nama Lengkap: ";
+        getline(cin, nama);
+
+        cout << "Masukkan No. Telepon: ";
+        getline(cin, telepon);
+
+        cout << "Masukkan Email: ";
+        getline(cin, email);
+
+        cout << "Masukkan Password: ";
+        getline(cin, password);
+
+        // Membuat objek pelanggan baru dan menambahkannya ke daftar.
+        Pelanggan pelangganBaru(id, nama, telepon, email, password);
+        daftarPelanggan.push_back(pelangganBaru);
+
+        // Menyimpan perubahan ke file database.
+        simpanData();
+        
+        cout << "\n>> Pelanggan '" << nama << "' berhasil didaftarkan! <<" << endl;
+        getch();
+    }
+
+    /**
+     * @brief Mencari pelanggan berdasarkan ID mereka.
+     * @param id ID pelanggan yang akan dicari.
+     * @return Pointer ke objek Pelanggan jika ditemukan, jika tidak, mengembalikan nullptr.
+     */
+    Pelanggan* cariPelanggan(const string& id) {
+        // Menggunakan auto& untuk mendapatkan referensi ke objek agar lebih efisien.
+        for (auto& pelanggan : daftarPelanggan) {
+            if (pelanggan.getId() == id) {
+                return &pelanggan; // Mengembalikan alamat dari objek yang ditemukan.
+            }
+        }
+        return nullptr; // Tidak ada pelanggan yang cocok.
+    }
+
+    /**
+     * @brief Menampilkan informasi dari semua pelanggan yang terdaftar.
+     * Berguna untuk keperluan administrasi.
+     */
+    void tampilkanSemuaPelanggan() const {
+        cout << "\n--- Daftar Semua Pelanggan ---" << endl;
+        if (daftarPelanggan.empty()) {
+            cout << "Belum ada pelanggan terdaftar." << endl;
+            return;
+        }
+
+        // Iterasi dan panggil metode tampilkanInfo() untuk setiap pelanggan.
+        for (auto it = daftarPelanggan.begin(); it != daftarPelanggan.end(); ++it) {
+            it->tampilkanInfo();
+        }
+    }
+
+    /**
+     * @brief (Placeholder) Mencatat jumlah total pelanggan.
+     * Fungsi ini saat ini tidak memiliki implementasi aktif tetapi bisa
+     * dikembangkan untuk menampilkan statistik.
+     */
+    void catatJumlahPelanggan() const {
+        // Dihilangkan untuk keringkasan, logika tetap sama jika menggunakan list.size()
+    }
 };
-
-// Constructor diubah untuk menerima nama file dan langsung memuat data
-CustomerManager::CustomerManager(const string& dataDir) : customerDataDir(dataDir) {
-    // Pastikan direktori ada
-    if (!fs::exists(customerDataDir)) {
-        fs::create_directory(customerDataDir);
-        cout << "[Info] Direktori '" << customerDataDir << "' dibuat." << endl;
-    }
-    muatDariFile();
-}
-
-// Implementasi untuk memuat data dari file JSON
-void CustomerManager::muatDariFile() {
-    daftarCustomer.clear(); // Bersihkan data yang ada di memori sebelum memuat ulang
-
-    if (!fs::exists(customerDataDir) || fs::is_empty(customerDataDir)) {
-        cout << "[Info] Database tidak ditemukan atau kosong. Memulai dengan data baru." << endl;
-        return;
-    }
-
-    for (const auto& entry : fs::directory_iterator(customerDataDir)) {
-        if (entry.is_regular_file() && entry.path().extension() == ".json") {
-            ifstream file(entry.path());
-            if (!file.is_open()) {
-                cerr << "Error: Gagal membuka file customer: " << entry.path() << endl;
-                continue;
-            }
-            try {
-                json customerJson = json::parse(file);
-                // DIUBAH: DynamicArray tidak punya emplace_back, jadi gunakan push_back 
-                // dengan memanggil constructor Customer secara eksplisit.
-                daftarCustomer.push_back(Customer(customerJson)); 
-            } catch (json::parse_error& e) {
-                cerr << "Error parsing JSON from " << entry.path() << ": " << e.what() << endl;
-            }
-            file.close();
-        }
-    }
-}
-
-bool CustomerManager::apakahIDExists(const string& id) const {
-    // Range-based for loop tetap bekerja karena DynamicArray memiliki begin() dan end()
-    for (const auto& customer : daftarCustomer) {
-        if (customer.getID() == id) {
-            return true;
-        }
-    }
-    return false;
-}
-
-void CustomerManager::tambahCustomer() {
-    string id, nama, telepon, email, password;
-
-    cout << "\n--- Pendaftaran Customer Baru ---" << endl;
-
-    // Membersihkan buffer sebelum meminta ID
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
-
-    // Meminta dan memvalidasi ID dari user
-    while (true) {
-        cout << "Masukkan ID yang diinginkan: ";
-        getline(cin, id);
-        if (id.empty()) {
-            cout << "ID tidak boleh kosong." << endl;
-        } else if (apakahIDExists(id)) {
-           cout << "ID '" << id << "' sudah digunakan. Silakan gunakan ID lain." << endl;
-        } else {
-            break;
-        }
-    }
-
-    cout << "Masukkan Nama Lengkap: ";
-    getline(cin, nama);
-
-    cout << "Masukkan No. Telepon: ";
-    getline(cin, telepon);
-
-    cout << "Masukkan Email: ";
-    getline(cin, email);
-
-    cout << "Masukkan Password: ";
-    getline(cin, password);
-
-    // Membuat objek customer baru
-    Customer newCustomer(id, nama, telepon, email, password);
-
-    daftarCustomer.push_back(newCustomer);
-
-    newCustomer.save();
-    
-    cout << "\n>> Customer '" << nama << "' berhasil didaftarkan dan data telah disimpan! <<" << endl;
-    cout << "Silakan login dengan ID dan password Anda." << endl;
-    getch();
-}
-
-Customer* CustomerManager::cariCustomer(const string& id) {
-    // Loop ini bekerja karena DynamicArray mengembalikan pointer di begin() dan end()
-    for (auto& customer : daftarCustomer) {
-        if (customer.getID() == id) {
-            return &customer; // Mengembalikan alamat dari objek customer yang cocok
-        }
-    }
-    return nullptr; // Mengembalikan null pointer jika tidak ditemukan
-}
-
-void CustomerManager::tampilkanSemuaCustomer() const {
-    cout << "\n--- Daftar Semua Customer ---" << endl;
-    if (daftarCustomer.empty()) {
-        cout << "Belum ada customer yang terdaftar." << endl;
-    } else {
-        for (const auto& customer : daftarCustomer) {
-            customer.displayInfo();
-        }
-    }
-}
 
 #endif

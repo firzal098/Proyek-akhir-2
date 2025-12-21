@@ -20,7 +20,7 @@ namespace RandomUtils {
      * @return std::string yang berisi karakter acak.
      * @throws std::invalid_argument jika panjangnya 0 atau negatif.
      */
-    inline std::string generateRandomString(int length = 5) {
+    inline std::string hasilkanStringAcak(int length = 5) {
         
         if (length <= 0) {
             throw std::invalid_argument("Panjang string harus bilangan bulat positif.");

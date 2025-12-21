@@ -1,263 +1,200 @@
-#ifndef PARKING_MANAGER_H
-#define PARKING_MANAGER_H
-
+#ifndef MANAJER_PARKIR_H
+#define MANAJER_PARKIR_H
+ 
 #include <iostream>
 #include <string>
 #include <limits>
 #include <conio.h>
-#include <iomanip> // untuk setw
-#include <map>     // <-- TAMBAHKAN INI
-#include <fstream> // <-- TAMBAHKAN INI
+#include <iomanip>
+#include <fstream> 
 #include "ParkingSystem.h"
-#include "json.hpp" // <-- TAMBAHKAN INI
-#include "DoublyLinkedList.hpp" // <-- DIUBAH
+#include "PenyimpanFile.hpp" 
+#include "DoublyLinkedList.hpp" 
 
 using namespace std;
-using json = nlohmann::json;
 
-class ParkingManager {
+// Struktur untuk data loyalitas
+struct EntriLoyalitas {
+    string nomorPolisi;
+    int poin;
+
+    static string serialisasi(const EntriLoyalitas& e) {
+        return e.nomorPolisi + "|" + to_string(e.poin);
+    }
+
+    static EntriLoyalitas deserialisasi(const string& baris) {
+        auto token = PenyimpanFile::pisah(baris, '|');
+        EntriLoyalitas e;
+        if (!token.empty()) {
+            auto it = token.begin();
+            e.nomorPolisi = *it;
+            if (++it != token.end()) {
+                e.poin = stoi(*it);
+            } else {
+                e.poin = 0;
+            }
+        }
+        return e;
+    }
+};
+
+class ManajerParkir {
 private:
-    ParkingSystem parkingSys; // "Bos" memiliki "Otak"
+    SistemParkir sistemParkir; 
 
-    // --- PETA MILIK "BOS" ---
-    DoublyLinkedList<DoublyLinkedList<string>> slotMap; // <-- DIUBAH
+    // --- PETA SLOT PARKIR ---
+    DoublyLinkedList<DoublyLinkedList<string>> petaSlot; 
 
-    // --- DATABASE POIN MILIK "BOS" ---
-    map<string, int> loyaltyPoints; // Map [PlatNomor -> Poin]
-    const string loyaltyFile = "loyalty_points.json";
+    // --- DATABASE LOYALITAS ---
+    DoublyLinkedList<EntriLoyalitas> poinLoyalitas; 
+    const string fileLoyalitas = "poin_loyalitas.db";
 
-    // --- FUNGSI HELPER PETA ---
-    void initializeParkingMap() {
-        slotMap.clear(); // Hapus data lama jika ada
+    void inisialisasiPetaParkir() {
+        petaSlot.clear(); 
+        // Pengaturan grid sederhana 5x5: A1..A5, B1..B5, dst.
         for (int i = 0; i < 5; ++i) {
-            DoublyLinkedList<string> row;
-            for (int j = 0; j < 10; ++j) {
-                char rowChar = 'A' + i;
-                row.push_back(rowChar + to_string(j + 1));
+            DoublyLinkedList<string> baris;
+            for (int j = 0; j < 5; ++j) {
+                string idSlot = string(1, 'A' + i) + to_string(j + 1);
+                baris.push_back(idSlot);
             }
-            slotMap.push_back(row);
+            petaSlot.push_back(baris);
         }
     }
 
-    // --- FUNGSI HELPER POIN (BARU) ---
-    void loadLoyaltyPoints() {
-        ifstream file(loyaltyFile);
-        if (file.is_open()) {
-            try {
-                json j_points;
-                // Cek jika file kosong sebelum parsing
-                if (file.peek() == ifstream::traits_type::eof()) {
-                    cout << "File poin loyalitas kosong." << endl;
-                    file.close();
-                    return;
-                }
-                file >> j_points;
-                loyaltyPoints = j_points.get<map<string, int>>();
-                cout << "Data poin loyalitas dimuat." << endl;
-            } catch (const json::parse_error& e) {
-                cerr << "Error parsing " << loyaltyFile << ": " << e.what() << endl;
-            }
-            file.close();
-        } else {
-            cout << "File poin loyalitas tidak ditemukan, akan dibuat baru." << endl;
-        }
+    void muatPoinLoyalitas() {
+        PenyimpanFile::muatDariFile(fileLoyalitas, poinLoyalitas, EntriLoyalitas::deserialisasi);
     }
 
-    void saveLoyaltyPoints() {
-        ofstream file(loyaltyFile);
-        if (file.is_open()) {
-            json j_points(loyaltyPoints); // Konversi dari std::map ke JSON
-            file << j_points.dump(4);
-            file.close();
+    void simpanPoinLoyalitas() {
+        PenyimpanFile::simpanKeFile(fileLoyalitas, poinLoyalitas, EntriLoyalitas::serialisasi);
+    }
+
+    EntriLoyalitas* cariLoyalitas(const string& plat) {
+        for (auto it = poinLoyalitas.begin(); it != poinLoyalitas.end(); ++it) {
+            if (it->nomorPolisi == plat) {
+                return &(*it);
+            }
+        }
+        return nullptr;
+    }
+
+    void cekPoinLoyalitas(const string& plat) {
+        EntriLoyalitas* entri = cariLoyalitas(plat);
+        if (entri) {
+            cout << "Poin loyalitas untuk " << plat << ": " << entri->poin << endl;
         } else {
-            cerr << "Gagal menyimpan poin loyalitas!" << endl;
+            cout << "Belum ada data loyalitas untuk kendaraan ini." << endl;
         }
     }
 
 public:
-    // --- FUNGSI PETA (Milik "Bos") ---
-    // (Salin fungsi displayParkingMap, isSlotValid, occupySlot, vacateSlot kamu ke sini)
-    void displayParkingMap() {
-        system("cls");
-        cout << "== PETA STATUS PARKIR ==\n\n";
-        for (size_t i = 0; i < slotMap.size(); ++i) {
-            for (size_t j = 0; j < slotMap[i].size(); ++j) {
-                cout << "[" << setw(3) << slotMap[i][j] << "] ";
-            }
-            cout << "\n";
-            }
-        cout << "\n[XX] = Terisi\n";
+    ManajerParkir() {
+        inisialisasiPetaParkir();
+        muatPoinLoyalitas();
     }
 
-    bool isSlotValid(string slotName) {
-        for (auto& row : slotMap) {
-            for (auto& slot : row) {
-                if (slot == slotName) return true;
-            }
-        }
-        return false; // Tidak ada atau sudah "XX"
-    }
-    void occupySlot(string slotName) {
-        for (auto& row : slotMap) {
-            for (auto& slot : row) {
-                if (slot == slotName) {
-                    slot = "XX";
-                    return;
+    // --- BARU: Tampilan Peta Visual ---
+    void tampilkanPeta() {
+        cout << "\n================ DENAH PARKIR (5x5) ================\n";
+        cout << "Legenda: [ XX ] = Terisi, [ A1 ] = Kosong\n\n";
+
+        // Iterasi melalui baris
+        for (auto itBaris = petaSlot.begin(); itBaris != petaSlot.end(); ++itBaris) {
+            cout << "   ";
+            // Iterasi melalui kolom di baris saat ini
+            for (auto itKolom = itBaris->begin(); itKolom != itBaris->end(); ++itKolom) {
+                string slot = *itKolom;
+                
+                if (sistemParkir.apakahSlotTerisi(slot)) {
+                    // Buat menonjol
+                    cout << "[ XX ] ";
+                } else {
+                    cout << "[ " << slot << " ] ";
                 }
             }
+            cout << endl;
         }
+        cout << "====================================================\n";
     }
 
-    void vacateSlot(string slotName) {
-        char rowChar = 'A' + (slotName[0] - 'A');
-        int colNum = stoi(slotName.substr(1));
-        size_t rowIndex = rowChar - 'A';
-        size_t colIndex = colNum - 1;
-        if (rowIndex >= 0 && rowIndex < slotMap.size() && colIndex >= 0 && colIndex < slotMap[0].size()) {
-            slotMap[rowIndex][colIndex] = slotName;
-        }
-    }
-
-    // --- FUNGSI BARU UNTUK CEK POIN ---
-    void checkLoyaltyPoints(const string& plat) const {
-        // Cek pakai .find() karena map::operator[] tidak const
-        auto it = loyaltyPoints.find(plat);
-        if (it != loyaltyPoints.end()) {
-            cout << "Kendaraan " << plat << " memiliki " << it->second << " poin." << endl;
-        } else {
-            cout << "Kendaraan " << plat << " belum memiliki poin." << endl;
-        }
-    }
-
-    // --- KONSTRUKTOR ---
-    ParkingManager() {
-        initializeParkingMap();
-        loadLoyaltyPoints(); // <-- PANGGIL FUNGSI LOAD POIN DI SINI
-        // parkingSys otomatis dibuat
-    }
-
-    // --- FUNGSI MENU UTAMA ---
-    void displayParkingMenu() {
-        int pilihan = 0;
-        // UBAH LOOP: Sekarang sampai 5
-        while (pilihan != 5) { 
-            system("cls");
-            displayParkingMap();
-
-            cout << "\n===== Manajemen Parkir =====" << endl;
-            cout << "1. Masuk Parkir" << endl;
-            cout << "2. Keluar Parkir" << endl;
-            cout << "3. Tampilkan Status Parkir" << endl;
-            cout << "4. Cek Poin Loyalitas (BARU)" << endl; // <-- MENU BARU
-            cout << "5. Kembali ke Menu Utama" << endl;     // <-- KEMBALI JADI 5
-            cout << "============================" << endl;
-            cout << "Pilih opsi: ";
-
+    void tampilkanMenu() {
+        int pilihan;
+        while (true) {
+            system("cls"); 
+            cout << "=== SISTEM MANAJEMEN PARKIR ===" << endl;
+            cout << "1. Masuk Parkir (Check-In)" << endl;
+            cout << "2. Keluar Parkir (Check-Out)" << endl;
+            cout << "3. Tampilkan Kendaraan Aktif" << endl;
+            cout << "4. Cek Poin Loyalitas" << endl;
+            cout << "5. Tampilkan Denah Parkir" << endl; // Opsi ditambahkan
+            cout << "6. Kembali" << endl;
+            cout << "Pilihan: ";
             cin >> pilihan;
-
-            if (cin.fail()) {
-                cout << "Input tidak valid." << endl;
-                cin.clear();
-                cin.ignore(numeric_limits<streamsize>::max(), '\n');
-                getch();
-                continue;
-            }
-            cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Clear buffer
+            cin.ignore(); 
 
             switch (pilihan) {
-                case 1: { // Masuk Parkir
-                    // (Logika Masuk Parkir kamu sudah benar, tidak perlu diubah)
-                    // ... (minta slot, plat, id customer) ...
-                    // ... (panggil parkingSys.createTicket(...) dan occupySlot(...)) ...
+                case 1: { // Check-in
+                    tampilkanPeta(); // Tampilkan peta sebelum meminta slot
+                    string idCust, plat, slot;
+                    cout << "\n--- Check-In ---" << endl;
+                    cout << "Masukkan ID Pelanggan: "; getline(cin, idCust);
+                    cout << "Masukkan Plat Nomor: "; getline(cin, plat);
+                    cout << "Masukkan Slot (dari denah diatas): "; getline(cin, slot);
                     
-                    // Salin kode 'case 1' kamu dari versi sebelumnya ke sini
-                    displayParkingMap();
-                    string chosenSlot;
-                    while (true) {
-                        cout << "\nMasukkan slot parkir pilihan (misal: A1): ";
-                        getline(cin, chosenSlot);
-                        if (isSlotValid(chosenSlot)) { break; } 
-                        else { cout << "Slot tidak valid atau terisi. Coba lagi." << endl; }
-                    }
-                    string platNomor;
-                    cout << "Masukkan Plat Nomor: ";
-                    getline(cin, platNomor);
-                    int customerID;
-                    cout << "Masukkan ID Customer (angka, ketik -1 jika non-member): ";
-                    cin >> customerID;
-                    if (cin.fail()) { /* ... */ break; }
-                    
-                    bool sukses = parkingSys.createTicket(customerID, platNomor, chosenSlot);
-                    if (sukses) {
-                        occupySlot(chosenSlot);
-                    }
+                    sistemParkir.checkIn(idCust, plat, slot);
                     getch();
                     break;
                 }
-                
-                // --- AWAL PERUBAHAN ---
-                case 2: { // Keluar Parkir
-                    uint64_t ticketID;
-                    cout << "--- Keluar Parkir ---" << endl;
-                    cout << "Masukkan ID Tiket: ";
-                    cin >> ticketID;
-                    if (cin.fail()) { /* (error handling) */ break; }
+                case 2: { // Check-out
+                    string idTiket;
+                    cout << "--- Check-Out ---" << endl;
+                    cout << "Masukkan ID Tiket: "; getline(cin, idTiket);
+                    
+                    TiketParkir t = sistemParkir.checkOut(idTiket);
+                    if (t.status == DIBAYAR) {
+                        cout << "Check-out Berhasil!" << endl;
+                        cout << "Biaya Parkir: Rp " << fixed << setprecision(0) << t.biaya << endl;
 
-                    // 1. Panggil "Otak" untuk checkout
-                    ParkingTicket tiketSelesai = parkingSys.selesaikanCheckout(ticketID);
-
-                    // 2. Cek apakah checkout berhasil (ID != 0)
-                    if (tiketSelesai.ticketID != 0) {
-                        
-                        // 3. Kosongkan slot di peta
-                        vacateSlot(tiketSelesai.parkingSlot); 
-
-                        // 4. --- LOGIKA POIN LOYALITAS (BARU) ---
-                        string plat = tiketSelesai.platNomor;
-                        double biaya = tiketSelesai.biaya;
-                        
-                        // Hitung poin (Misal: 1 poin per 1000 rupiah)
-                        int poinDidapat = static_cast<int>(biaya / 1000);
-                        
+                        // Tambah Poin Loyalitas
+                        int poinDidapat = static_cast<int>(t.biaya / 1000);
                         if (poinDidapat > 0) {
-                            // Jika plat belum ada di database, buat baru
-                            if (loyaltyPoints.find(plat) == loyaltyPoints.end()) {
-                                loyaltyPoints[plat] = 0;
+                            string plat = t.nomorPolisi;
+                            EntriLoyalitas* entri = cariLoyalitas(plat);
+                            
+                            if (!entri) {
+                                EntriLoyalitas entriBaru{plat, poinDidapat};
+                                poinLoyalitas.push_back(entriBaru);
+                                cout << "Anggota Loyalitas Baru! Poin awal: " << entriBaru.poin << endl;
+                            } else {
+                                entri->poin += poinDidapat;
+                                cout << "Kendaraan " << plat << " mendapat tambahan " << poinDidapat << " poin!" << endl;
+                                cout << "Total poin sekarang: " << entri->poin << endl;
                             }
-                            // Tambah poin
-                            loyaltyPoints[plat] += poinDidapat;
-
-                            cout << "Kendaraan " << plat << " mendapat " << poinDidapat << " poin!" << endl;
-                            cout << "Total poin sekarang: " << loyaltyPoints[plat] << endl;
-
-                            // 5. Simpan database poin ke file
-                            saveLoyaltyPoints();
+                            simpanPoinLoyalitas();
                         }
                     }
                     getch();
                     break;
                 }
-                // --- AKHIR PERUBAHAN ---
-
-                case 3: // Tampilkan Status
-                    parkingSys.displayActiveTickets();
+                case 3: 
+                    sistemParkir.tampilkanTiketAktif();
                     getch();
                     break;
-                
-                // --- MENU BARU ---
-                case 4: { // Cek Poin Loyalitas
+                case 4: { 
                     string plat;
                     cout << "--- Cek Poin Loyalitas ---" << endl;
-                    cout << "Masukkan Plat Nomor: ";
-                    getline(cin, plat);
-                    checkLoyaltyPoints(plat); // Panggil fungsi baru
+                    cout << "Masukkan Plat Nomor: "; getline(cin, plat);
+                    cekPoinLoyalitas(plat); 
                     getch();
                     break;
                 }
-
-                case 5: // Kembali
-                    cout << "Kembali ke Menu Utama..." << endl;
+                case 5:
+                    tampilkanPeta();
+                    getch();
                     break;
+                case 6: 
+                    return;
                 default:
                     cout << "Pilihan tidak valid." << endl;
                     getch();
@@ -267,4 +204,4 @@ public:
     }
 };
 
-#endif // PARKING_MANAGER_H
+#endif // MANAJER_PARKIR_H
