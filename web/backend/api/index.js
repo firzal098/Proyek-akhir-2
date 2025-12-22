@@ -12,17 +12,16 @@ app.use(express.urlencoded({ extended: true }));
 const db = require('../config/database');
 db.init();
 
-// Routes
-app.use('/auth', require('../routes/auth'));
-app.use('/customers', require('../routes/customers'));
-app.use('/vendors', require('../routes/vendors'));
-app.use('/parking', require('../routes/parking'));
+// ✅ FIX: Add '/api' prefix to ALL routes so they match the URL coming from Frontend
+app.use('/api/auth', require('../routes/auth'));
+app.use('/api/customers', require('../routes/customers'));
+app.use('/api/vendors', require('../routes/vendors'));
+app.use('/api/parking', require('../routes/parking'));
 
-// Health check
-app.get('/health', (req, res) => {
+// ✅ FIX: Update Health Check too
+app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Server is running' });
 });
 
 // Export for Vercel serverless
 module.exports = app;
-
