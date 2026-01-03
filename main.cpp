@@ -244,7 +244,7 @@ void menuKlien(Pelanggan* pelangganMasuk, ManajerParkir& manajerParkir, ManajerV
 
         switch (pilihan) {
             case 1:
-                manajerParkir.tampilkanMenu();
+                manajerParkir.tampilkanMenu(pelangganMasuk, manajerPelanggan);
                 break;
             case 2:
                 menuToko(pelangganMasuk, manajerVendor, manajerPelanggan);
@@ -284,7 +284,7 @@ void menuAdmin(ManajerPelanggan& manajerPelanggan, ManajerParkir& manajerParkir,
                 getch();
                 break;
             case 2:
-                manajerParkir.tampilkanMenu();
+                manajerParkir.tampilkanMenu(nullptr, manajerPelanggan);
                 break;
             case 3:
                manajerVendor.jalankan();

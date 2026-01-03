@@ -9,6 +9,7 @@
 #include "PenyimpanFile.hpp" 
 #include "DoublyLinkedList.hpp"
 
+
 using namespace std;
 
 class SistemParkir {
@@ -16,6 +17,7 @@ private:
     DoublyLinkedList<TiketParkir> tiketAktif; 
     DoublyLinkedList<TiketParkir> riwayatTiket; 
     
+
     const string fileAktif = "parkir_aktif.db";
     const string fileRiwayat = "riwayat_parkir.db";
 
@@ -65,7 +67,10 @@ public:
         PenyimpanFile::muatDariFile(fileRiwayat, riwayatTiket, deserialisasiTiket);
     }
 
-    // --- BARU: Bantuan untuk Tampilan Peta ---
+    DoublyLinkedList<TiketParkir>& getTiketAktif() {
+        return tiketAktif;
+    }
+
     bool apakahSlotTerisi(const string& slot) {
         for(auto it = tiketAktif.begin(); it != tiketAktif.end(); ++it) {
             if (it->slotParkir == slot && it->status == AKTIF) {
@@ -75,54 +80,58 @@ public:
         return false;
     }
 
+    // --- MODIFIKASI: Implementasi Check-In dengan Queue ---
     void checkIn(string idCust, string plat, string slot) {
-        // Validasi jika slot sudah terisi
-        if (apakahSlotTerisi(slot)) {
-            cout << "Error: Slot " << slot << " sudah terisi!" << endl;
-            return;
-        }
-
-        time_t sekarang = time(0);
-        string idTiket = "TKT-" + to_string(sekarang); 
-
-        TiketParkir t;
-        t.idTiket = idTiket;
-        t.idPelanggan = idCust;
-        t.nomorPolisi = plat;
-        t.waktuMasuk = sekarang;
-        t.status = AKTIF;
-        t.slotParkir = slot;
-        t.biaya = 0;
-        t.waktuKeluar = 0;
-
-        tiketAktif.push_back(t);
-        simpanAktif(); 
-
-        cout << "Check-in Berhasil!" << endl;
-        cout << "ID Tiket: " << idTiket << endl;
+    if (apakahSlotTerisi(slot)) {
+        cout << "Error: Slot " << slot << " sudah terisi!\n";
+        return;
     }
+
+    time_t sekarang = time(0);
+    string idTiket = "TKT-" + to_string(sekarang);
+
+    TiketParkir t;
+    t.idTiket = idTiket;
+    t.idPelanggan = idCust;
+    t.nomorPolisi = plat;
+    t.waktuMasuk = sekarang;
+    t.status = AKTIF;
+    t.slotParkir = slot;
+
+    tiketAktif.push_back(t);
+    simpanAktif();
+
+    cout << "Check-in Berhasil!\n";
+    cout << "ID Tiket: " << idTiket << endl;
+}
+
 
     TiketParkir checkOut(string idTiket) {
         bool ditemukan = false;
         TiketParkir tiketDitemukan;
-        
+
         DoublyLinkedList<TiketParkir> tempAktif;
-        
+
         while(!tiketAktif.empty()) {
             TiketParkir t = tiketAktif.front();
-            tiketAktif.pop_front();
+           tiketAktif.pop_front();
 
             if (t.idTiket == idTiket && t.status == AKTIF) {
                 t.waktuKeluar = time(0);
                 t.status = DIBAYAR;
-                
-                double durasi = difftime(t.waktuKeluar, t.waktuMasuk);
-                t.biaya = (durasi > 0 ? durasi : 1) * 2000; 
+
+                // --- FIX: Hitung biaya per jam 5k ---
+                double durasiJam = ceil(difftime(t.waktuKeluar, t.waktuMasuk) / 3600.0);
+                if(durasiJam < 1) durasiJam = 1;
+                t.biaya = durasiJam * 5000;
 
                 tiketDitemukan = t;
                 ditemukan = true;
-                
+
                 riwayatTiket.push_back(t);
+
+                cout << "Check-out berhasil untuk tiket " << t.idTiket << endl;
+
             } else {
                 tempAktif.push_back(t);
             }
@@ -137,8 +146,9 @@ public:
         } else {
             cout << "Error: Tiket dengan ID " << idTiket << " tidak ditemukan." << endl;
             return TiketParkir(); 
-        }
+       }
     }
+
 
     void tampilkanTiketAktif() {
         cout << "\n--- Kendaraan Saat Ini di Dalam Parkir ---\n";
@@ -153,6 +163,23 @@ public:
                  << ", Slot: " << it->slotParkir << endl;
         }
     }
+
+    void tampilkanRiwayat() {
+        cout << "\n--- Riwayat Kendaraan Keluar ---\n";
+        if (riwayatTiket.empty()) {
+            cout << "Belum ada kendaraan yang keluar.\n";
+            return;
+        }
+
+        for(auto it = riwayatTiket.begin(); it != riwayatTiket.end(); ++it) {
+            cout << "ID Tiket   : " << it->idTiket << endl;
+            cout << "Plat Nomor : " << it->nomorPolisi << endl;
+            cout << "Biaya      : Rp" << it->biaya << endl;
+            cout << "Durasi     : Selesai\n";
+            cout << "---------------------------------\n";
+        }
+    }
+
 };
 
 #endif // SISTEM_PARKIR_H
