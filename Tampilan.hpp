@@ -107,4 +107,23 @@ string getString(const string& prompt) {
     return input;
 }
 
+/**
+ * @brief Meminta input integer dari pengguna.
+ * @param prompt Pesan yang ditampilkan kepada pengguna.
+ * @return Integer yang dimasukkan oleh pengguna.
+ */
+int getInt(const string& prompt) {
+    int input;
+    cout << BOLD << YELLOW << "-> " << prompt << ": " << RESET;
+    cin >> input;
+    if (cin.fail()) {
+        cin.clear();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        printError("Input harus berupa angka!");
+        return -1; // Mengembalikan nilai error
+    }
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    return input;
+}
+
 } // namespace Tampilan

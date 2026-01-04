@@ -6,6 +6,7 @@
 #include <fstream>
 #include "PenyimpanFile.hpp" // Akan diganti namanya nanti
 #include "Tampilan.hpp"
+#include "DataStructures.hpp" // Untuk StackRiwayat
 using namespace std;
 
 /**
@@ -25,6 +26,8 @@ private:
     double saldo;           // Saldo moneter yang dimiliki pelanggan untuk melakukan transaksi.
 
 public:
+    StackRiwayat riwayatBelanja; // Riwayat belanja per pelanggan
+    
     /**
      * @brief Konstruktor untuk membuat objek Pelanggan baru dengan semua detail.
      * @param id_ ID unik pelanggan.

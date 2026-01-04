@@ -21,7 +21,9 @@ using namespace RandomUtils;
 class ManajerPelanggan {
 private:
     DoublyLinkedList<Pelanggan> daftarPelanggan; 
-    string fileDataPelanggan;                   
+    string fileDataPelanggan;
+    BSTLoyalitasPelanggan bstLoyalitas;
+    string filePoinLoyalitas = "poin_loyalitas.db";                   
 
     /**
      * @brief Memeriksa apakah sebuah ID pelanggan sudah ada dalam daftar.
@@ -34,13 +36,29 @@ private:
         }
         return false; 
     }
+    
+    void muatDataPoin() {
+        ifstream file(filePoinLoyalitas);
+        if (!file.is_open()) return;
+        string baris;
+        while (getline(file, baris)) {
+            size_t pos = baris.find('|');
+            if (pos != string::npos) {
+                string id = baris.substr(0, pos);
+                int poin = stoi(baris.substr(pos + 1));
+                bstLoyalitas.insertDirect(id, poin);
+            }
+        }
+        file.close();
+    }
 
 public:
     /**
-     * @brief Menyimpan seluruh daftar pelanggan ke dalam file.
+     * @brief Menyimpan seluruh daftar pelanggan dan poin loyalitas ke dalam file.
      */
     void simpanData() {
         PenyimpanFile::simpanKeFile(fileDataPelanggan, daftarPelanggan, Pelanggan::serialisasi);
+        bstLoyalitas.simpanKeFile(filePoinLoyalitas);
     }
 
     /**
@@ -48,6 +66,7 @@ public:
      */
     ManajerPelanggan(const string& namaFile) : fileDataPelanggan(namaFile) {
         PenyimpanFile::muatDariFile(fileDataPelanggan, daftarPelanggan, Pelanggan::deserialisasi);
+        muatDataPoin();
     }
 
     /**
@@ -73,6 +92,7 @@ public:
 
         Pelanggan pelangganBaru(id, nama, telepon, email, password);
         daftarPelanggan.push_back(pelangganBaru);
+        bstLoyalitas.tambahAtauUpdate(id, 0); // Daftarkan ke sistem loyalitas dengan 0 poin
 
         simpanData();
         
@@ -91,6 +111,17 @@ public:
         }
         return nullptr;
     }
+
+    // --- Fungsi terkait Loyalitas ---
+    string getLevelPelanggan(const string& id) {
+        return bstLoyalitas.getLevel(id);
+    }
+
+    void tambahPoin(const string& id, int poin) {
+        bstLoyalitas.tambahAtauUpdate(id, poin);
+        // Poin akan disimpan saat simpanData() dipanggil
+    }
+    // --------------------------------
 
     /**
      * @brief Menampilkan informasi dari semua pelanggan yang terdaftar.

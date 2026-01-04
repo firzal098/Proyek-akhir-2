@@ -17,6 +17,11 @@
 
 using namespace std;
 
+//--- Global Objects for Order Processing ---
+PriorityQueuePesanan antrianPesanan;
+StackRiwayat riwayatTransaksiAdmin;
+// -----------------------------------------
+
 
 // --- Deklarasi Fungsi ---
 void menuBeriSaldo(ManajerPelanggan& manajerPelanggan);
@@ -24,8 +29,159 @@ void menuToko(Pelanggan* pelanggan, ManajerVendor& manajerVendor, ManajerPelangg
 string tanganiLogin(ManajerPelanggan& manajerPelanggan, Pelanggan** pelangganKeluar);
 void menuKlien(Pelanggan* pelangganMasuk, ManajerParkir& manajerParkir, ManajerVendor& manajerVendor, ManajerPelanggan& manajerPelanggan);
 void menuAdmin(ManajerPelanggan& manajerPelanggan, ManajerParkir& manajerParkir, ManajerVendor& manajerVendor); 
+void prosesPesanan(ManajerPelanggan& manajerPelanggan, ManajerVendor& manajerVendor);
+void undoTransaksiTerakhir(ManajerPelanggan& manajerPelanggan, ManajerVendor& manajerVendor);
+void tampilkanDetailPesanan(const Pesanan& p, ManajerPelanggan& manajerPelanggan);
 
 // --- Implementasi Fungsi ---
+
+/**
+ * @brief Menampilkan detail sebuah objek Pesanan secara terformat.
+ */
+void tampilkanDetailPesanan(const Pesanan& p, ManajerPelanggan& manajerPelanggan) {
+    Pelanggan* pelanggan = manajerPelanggan.cariPelanggan(p.idPelanggan);
+    string namaPelanggan = pelanggan ? pelanggan->getNama() : "Tidak Dikenal";
+
+    cout << Tampilan::BLUE << "----------------------------------------" << Tampilan::RESET << endl;
+    cout << Tampilan::BOLD << "ID Pelanggan   : " << Tampilan::RESET << p.idPelanggan << " (" << namaPelanggan << ")" << endl;
+    cout << Tampilan::BOLD << "Produk         : " << Tampilan::RESET << p.namaProduk << endl;
+    cout << Tampilan::BOLD << "Jumlah         : " << Tampilan::RESET << p.jumlah << endl;
+    cout << Tampilan::BOLD << "Total Harga    : " << Tampilan::GREEN << "Rp" << p.totalHarga << Tampilan::RESET << endl;
+    cout << Tampilan::BOLD << "Prioritas      : " << Tampilan::RESET << p.prioritas << endl;
+    cout << Tampilan::BLUE << "----------------------------------------" << Tampilan::RESET << endl;
+}
+
+/**
+ * @brief Memproses pesanan dengan prioritas tertinggi dari antrian.
+ */
+void prosesPesanan(ManajerPelanggan& manajerPelanggan, ManajerVendor& manajerVendor) {
+    Tampilan::printHeader("Proses Pesanan");
+    if (antrianPesanan.isEmpty()) {
+        Tampilan::printMessage("Tidak ada pesanan untuk diproses.");
+        return;
+    }
+
+    try {
+        Pesanan pesanan = antrianPesanan.dequeue();
+
+        Pelanggan* pelanggan = manajerPelanggan.cariPelanggan(pesanan.idPelanggan);
+        Vendor* vendor = manajerVendor.getVendorById(stoi(pesanan.idVendor));
+
+        if (!pelanggan || !vendor) {
+            Tampilan::printError("Gagal proses: Pelanggan atau Vendor tidak valid untuk pesanan ini.");
+            // Mungkin kembalikan pesanan ke antrian atau log error
+            return;
+        }
+
+        Produk* produk = nullptr;
+        for (auto& p : vendor->getDaftarProduk()) {
+            if (p.nama == pesanan.namaProduk) {
+                produk = &p;
+                break;
+            }
+        }
+
+        if (!produk) {
+            Tampilan::printError("Gagal proses: Produk tidak lagi tersedia.");
+            return;
+        }
+
+        // Ulangi validasi untuk kondisi race condition
+        if (pelanggan->getSaldo() < pesanan.totalHarga || produk->stok < pesanan.jumlah) {
+            Tampilan::printError("Gagal proses: Saldo atau stok tidak lagi mencukupi saat akan diproses.");
+            // Bisa jadi ada transaksi lain yang mengubah saldo/stok
+            return;
+        }
+
+        // --- EKSEKUSI TRANSAKSI ---
+        pelanggan->setSaldo(pelanggan->getSaldo() - pesanan.totalHarga);
+        produk->stok -= pesanan.jumlah;
+        
+        // Tambah poin loyalitas (misal 1 poin per 1000 rupiah)
+        int poinDidapat = static_cast<int>(pesanan.totalHarga / 1000);
+        manajerPelanggan.tambahPoin(pelanggan->getId(), poinDidapat);
+
+        // Simpan perubahan ke file
+        manajerPelanggan.simpanData();
+        manajerVendor.simpan();
+
+        // Masukkan ke riwayat
+        riwayatTransaksiAdmin.push(pesanan);
+        pelanggan->riwayatBelanja.push(pesanan);
+
+        Tampilan::printMessage("Pesanan berhasil diproses!", Tampilan::GREEN);
+        cout << "Detail: " << pesanan.jumlah << "x " << pesanan.namaProduk << " untuk " << pelanggan->getNama() << endl;
+        cout << "Poin loyalitas ditambahkan: " << poinDidapat << endl;
+
+    } catch (const runtime_error& e) {
+        Tampilan::printError(e.what());
+    }
+}
+
+/**
+ * @brief Membatalkan transaksi terakhir yang diproses oleh admin.
+ */
+void undoTransaksiTerakhir(ManajerPelanggan& manajerPelanggan, ManajerVendor& manajerVendor) {
+    Tampilan::printHeader("Undo Transaksi Terakhir");
+    if (riwayatTransaksiAdmin.isEmpty()) {
+        Tampilan::printMessage("Tidak ada transaksi untuk di-undo.");
+        return;
+    }
+
+    try {
+        Pesanan pesanan = riwayatTransaksiAdmin.pop();
+
+        Pelanggan* pelanggan = manajerPelanggan.cariPelanggan(pesanan.idPelanggan);
+        Vendor* vendor = manajerVendor.getVendorById(stoi(pesanan.idVendor));
+
+        // Jika pelanggan/vendor dihapus setelah transaksi, bisa terjadi error
+        if (!pelanggan || !vendor) {
+            Tampilan::printError("Gagal undo: Pelanggan atau Vendor dari transaksi ini sudah tidak ada.");
+            // Kembalikan pesanan ke stack? Atau log sebagai irreversible?
+            // Untuk sekarang, kita hentikan proses undo.
+            riwayatTransaksiAdmin.push(pesanan); // Push kembali karena gagal
+            return;
+        }
+
+        Produk* produk = nullptr;
+        for (auto& p : vendor->getDaftarProduk()) {
+            if (p.nama == pesanan.namaProduk) {
+                produk = &p;
+                break;
+            }
+        }
+        
+        // Jika produk dihapus dari vendor, ini juga masalah
+        if(!produk){
+             Tampilan::printError("Gagal undo: Produk dari transaksi ini sudah tidak ada.");
+             riwayatTransaksiAdmin.push(pesanan);
+             return;
+        }
+
+        // --- REVERT TRANSAKSI ---
+        pelanggan->setSaldo(pelanggan->getSaldo() + pesanan.totalHarga);
+        produk->stok += pesanan.jumlah;
+
+        // Kurangi poin loyalitas yang sudah diberikan
+        int poinDibatalkan = static_cast<int>(pesanan.totalHarga / 1000);
+        manajerPelanggan.tambahPoin(pelanggan->getId(), -poinDibatalkan);
+
+        // Simpan perubahan
+        manajerPelanggan.simpanData();
+        manajerVendor.simpan();
+
+        // Optional: Hapus dari riwayat belanja pelanggan?
+        // Untuk saat ini, biarkan sebagai bukti transaksi yang dibatalkan.
+        
+        Tampilan::printMessage("Transaksi terakhir berhasil di-undo!", Tampilan::GREEN);
+        cout << "Refund Rp" << pesanan.totalHarga << " ke " << pelanggan->getNama() << "." << endl;
+        cout << "Stok " << pesanan.namaProduk << " telah dikembalikan." << endl;
+
+    } catch (const runtime_error& e) {
+        Tampilan::printError(e.what());
+    }
+}
+
 
 /**
  * @brief Menampilkan menu untuk admin agar dapat menambahkan saldo ke akun pelanggan.
@@ -76,16 +232,10 @@ void menuToko(Pelanggan* pelanggan, ManajerVendor& manajerVendor, ManajerPelangg
     cout << "\n--- Daftar Vendor Tersedia ---\n";
     manajerVendor.tampilkanSemua();
     
-    int idVendor = Tampilan::getChoice();
+    // Asumsi pengguna memasukkan ID vendor yang valid dari daftar
+    int idVendor = Tampilan::getInt("Pilih ID Vendor");
 
-    Vendor* targetVendor = nullptr;
-    DoublyLinkedList<Vendor>& daftarVendor = manajerVendor.getDaftarVendor();
-    for (auto it = daftarVendor.begin(); it != daftarVendor.end(); ++it) {
-        if (it->getId() == idVendor) {
-            targetVendor = &(*it);
-            break;
-        }
-    }
+    Vendor* targetVendor = manajerVendor.getVendorById(idVendor);
 
     if (!targetVendor) {
         Tampilan::printError("Vendor tidak ditemukan.");
@@ -97,10 +247,7 @@ void menuToko(Pelanggan* pelanggan, ManajerVendor& manajerVendor, ManajerPelangg
     targetVendor->tampilkanProduk();
 
     string namaProduk = Tampilan::getString("Masukkan nama produk yang ingin dibeli");
-    cout << Tampilan::BOLD << Tampilan::YELLOW << "-> Masukkan jumlah yang ingin dibeli: " << Tampilan::RESET;
-    int jumlahBeli;
-    cin >> jumlahBeli;
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    int jumlahBeli = Tampilan::getInt("Masukkan jumlah yang ingin dibeli");
 
     Produk* targetProduk = nullptr;
     DoublyLinkedList<Produk>& daftarProduk = targetVendor->getDaftarProduk();
@@ -129,15 +276,21 @@ void menuToko(Pelanggan* pelanggan, ManajerVendor& manajerVendor, ManajerPelangg
         return;
     }
 
-    pelanggan->setSaldo(pelanggan->getSaldo() - totalHarga);
-    targetProduk->stok -= jumlahBeli;
+    // --- LOGIKA BARU: MASUKKAN KE PRIORITY QUEUE ---
+    string level = manajerPelanggan.getLevelPelanggan(pelanggan->getId());
+    int prioritas = BSTLoyalitasPelanggan::getPrioritasFromLevel(level);
 
-    manajerPelanggan.simpanData();
-    manajerVendor.simpan();
-
-    Tampilan::printMessage("Pembelian berhasil!", Tampilan::GREEN);
-    cout << "Sisa saldo Anda: Rp" << pelanggan->getSaldo() << endl;
-    cout << "Sisa stok produk '" << targetProduk->nama << "': " << targetProduk->stok << endl;
+    Pesanan pesananBaru;
+    pesananBaru.idPelanggan = pelanggan->getId();
+    pesananBaru.idVendor = to_string(targetVendor->getId());
+    pesananBaru.namaProduk = targetProduk->nama;
+    pesananBaru.jumlah = jumlahBeli;
+    pesananBaru.totalHarga = totalHarga;
+    pesananBaru.prioritas = prioritas;
+    
+    antrianPesanan.enqueue(pesananBaru);
+    // Transaksi tidak dieksekusi di sini. Saldo dan stok tidak diubah.
+    
     Tampilan::pause();
 }
 
@@ -232,6 +385,9 @@ void menuAdmin(ManajerPelanggan& manajerPelanggan, ManajerParkir& manajerParkir,
         menuItems.push_back("Manajemen Parkir");
         menuItems.push_back("Manajemen Vendor");
         menuItems.push_back("Beri Saldo ke Pelanggan");
+        menuItems.push_back("Lihat Antrian Pesanan (Priority Queue)");
+        menuItems.push_back("Proses Pesanan Berikutnya (Priority Queue)");
+        menuItems.push_back("Undo Pembelanjaan Terakhir (Stack)");
         menuItems.push_back("Logout");
         Tampilan::printMenu(menuItems);
         int pilihan = Tampilan::getChoice();
@@ -252,6 +408,49 @@ void menuAdmin(ManajerPelanggan& manajerPelanggan, ManajerParkir& manajerParkir,
                 menuBeriSaldo(manajerPelanggan);
                 break;
             case 5:
+                Tampilan::printHeader("Antrian Pesanan (Priority Queue)");
+                antrianPesanan.tampilkan();
+                Tampilan::pause();
+                break;
+            case 6:
+                {
+                    if (antrianPesanan.isEmpty()) {
+                        Tampilan::printMessage("Tidak ada pesanan untuk diproses.");
+                    } else {
+                        Tampilan::printMessage("Pesanan berikutnya yang akan diproses:", Tampilan::YELLOW);
+                        Pesanan pesanan = antrianPesanan.peek();
+                        tampilkanDetailPesanan(pesanan, manajerPelanggan);
+
+                        string konfirmasi = Tampilan::getString("Proses pesanan ini? (Y/N)");
+                        if (konfirmasi == "Y" || konfirmasi == "y") {
+                            prosesPesanan(manajerPelanggan, manajerVendor);
+                        } else {
+                            Tampilan::printMessage("Proses dibatalkan.");
+                        }
+                    }
+                    Tampilan::pause();
+                }
+                break;
+            case 7:
+                {
+                    if (riwayatTransaksiAdmin.isEmpty()) {
+                        Tampilan::printMessage("Tidak ada transaksi untuk di-undo.");
+                    } else {
+                        Tampilan::printMessage("Transaksi terakhir yang akan di-undo:", Tampilan::YELLOW);
+                        Pesanan pesanan = riwayatTransaksiAdmin.peekData();
+                        tampilkanDetailPesanan(pesanan, manajerPelanggan);
+
+                        string konfirmasi = Tampilan::getString("Batalkan transaksi ini? (Y/N)");
+                        if (konfirmasi == "Y" || konfirmasi == "y") {
+                            undoTransaksiTerakhir(manajerPelanggan, manajerVendor);
+                        } else {
+                            Tampilan::printMessage("Pembatalan dibatalkan.");
+                        }
+                    }
+                    Tampilan::pause();
+                }
+                break;
+            case 8:
                 return;
             default:
                 Tampilan::printError("Pilihan tidak valid.");

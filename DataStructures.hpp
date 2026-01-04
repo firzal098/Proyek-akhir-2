@@ -273,4 +273,246 @@ void tampilkanTop5() {
     }
 };
 
+// ==========================================
+// 4. STRUKTUR DATA: PESANAN DAN ANTRIAN PRIORITAS
+// ==========================================
+struct Pesanan {
+    string idPelanggan;
+    string idVendor;
+    string namaProduk;
+    int jumlah;
+    double totalHarga;
+    int prioritas; // 1 (tertinggi) s.d. 5 (terendah)
+};
+
+struct NodePesanan {
+    Pesanan data;
+    NodePesanan* next;
+};
+
+class PriorityQueuePesanan {
+private:
+    NodePesanan* head;
+
+public:
+    PriorityQueuePesanan() : head(nullptr) {}
+
+    bool isEmpty() {
+        return head == nullptr;
+    }
+
+    void enqueue(Pesanan p) {
+        NodePesanan* baru = new NodePesanan{p, nullptr};
+        
+        // Jika antrian kosong atau prioritas node baru lebih tinggi dari head
+        if (isEmpty() || p.prioritas < head->data.prioritas) {
+            baru->next = head;
+            head = baru;
+        } else {
+            NodePesanan* temp = head;
+            // Cari posisi yang tepat untuk disisipkan
+            while (temp->next != nullptr && temp->next->data.prioritas <= p.prioritas) {
+                temp = temp->next;
+            }
+            baru->next = temp->next;
+            temp->next = baru;
+        }
+        cout << "Pesanan untuk produk '" << p.namaProduk << "' telah diterima dan menunggu untuk diproses." << endl;
+    }
+
+    Pesanan dequeue() {
+        if (isEmpty()) {
+            throw runtime_error("Antrian pesanan kosong!");
+        }
+        NodePesanan* temp = head;
+        Pesanan dataPesanan = temp->data;
+        head = head->next;
+        delete temp;
+        return dataPesanan;
+    }
+
+    Pesanan peek() {
+        if (isEmpty()) {
+            throw runtime_error("Antrian pesanan kosong!");
+        }
+        return head->data;
+    }
+
+    void tampilkan() {
+        if (isEmpty()) {
+            cout << "Tidak ada pesanan dalam antrian." << endl;
+            return;
+        }
+        cout << "\n--- Antrian Pesanan Saat Ini ---\n";
+        NodePesanan* temp = head;
+        int i = 1;
+        while (temp != nullptr) {
+            cout << i++ << ". ID Pelanggan: " << temp->data.idPelanggan
+                 << " | Produk: " << temp->data.namaProduk
+                 << " | Prioritas: " << temp->data.prioritas << endl;
+            temp = temp->next;
+        }
+    }
+};
+
+// ==========================================
+// 5. STRUKTUR DATA: STACK (LIFO) - Riwayat Pembelanjaan
+// ==========================================
+struct NodeRiwayat {
+    Pesanan pesanan;
+    NodeRiwayat* next;
+};
+
+class StackRiwayat {
+private:
+    NodeRiwayat* top;
+
+public:
+    StackRiwayat() : top(nullptr) {}
+
+    bool isEmpty() {
+        return top == nullptr;
+    }
+
+    void push(Pesanan p) {
+        NodeRiwayat* baru = new NodeRiwayat{p, top};
+        top = baru;
+    }
+
+    Pesanan pop() {
+        if (isEmpty()) {
+            throw runtime_error("Riwayat pembelanjaan kosong!");
+        }
+        NodeRiwayat* temp = top;
+        Pesanan dataPesanan = temp->pesanan;
+        top = top->next;
+        delete temp;
+        return dataPesanan;
+    }
+
+    Pesanan peekData() {
+        if (isEmpty()) {
+            throw runtime_error("Riwayat pembelanjaan kosong!");
+        }
+        return top->pesanan;
+    }
+
+    void peek() {
+        if (isEmpty()) {
+            cout << "Tidak ada riwayat pembelanjaan." << endl;
+        } else {
+            cout << "\n--- Pembelanjaan Terakhir ---\n";
+            cout << "ID Pelanggan : " << top->pesanan.idPelanggan << endl;
+            cout << "ID Vendor    : " << top->pesanan.idVendor << endl;
+            cout << "Produk       : " << top->pesanan.namaProduk << endl;
+            cout << "Jumlah       : " << top->pesanan.jumlah << endl;
+            cout << "Total Harga  : Rp " << fixed << setprecision(2) << top->pesanan.totalHarga << endl;
+        }
+    }
+};
+
+
+// ==========================================
+// 6. STRUKTUR DATA: BST - Poin Loyalitas Pelanggan
+// ==========================================
+struct NodeBSTPelanggan {
+    string idPelanggan;
+    int poin;
+    NodeBSTPelanggan* left;
+    NodeBSTPelanggan* right;
+};
+
+struct TopPelanggan {
+    string id;
+    int poin;
+};
+
+class BSTLoyalitasPelanggan {
+private:
+    NodeBSTPelanggan* root;
+
+    NodeBSTPelanggan* insertRec(NodeBSTPelanggan* node, string id, int poin) {
+        if (node == nullptr) {
+            return new NodeBSTPelanggan{id, poin, nullptr, nullptr};
+        }
+        if (id < node->idPelanggan)
+            node->left = insertRec(node->left, id, poin);
+        else if (id > node->idPelanggan)
+            node->right = insertRec(node->right, id, poin);
+        else
+            node->poin = poin; 
+        return node;
+    }
+
+    NodeBSTPelanggan* searchRec(NodeBSTPelanggan* node, string id) {
+        if (node == nullptr || node->idPelanggan == id)
+            return node;
+        if (id < node->idPelanggan)
+            return searchRec(node->left, id);
+        return searchRec(node->right, id);
+    }
+
+    void inorderSave(NodeBSTPelanggan* node, ofstream& file) {
+        if (node) {
+            inorderSave(node->left, file);
+            file << node->idPelanggan << "|" << node->poin << endl;
+            inorderSave(node->right, file);
+        }
+    }
+
+public:
+    BSTLoyalitasPelanggan() : root(nullptr) {}
+
+    void tambahAtauUpdate(string id, int poinTambah) {
+        NodeBSTPelanggan* existing = searchRec(root, id);
+        if (existing) {
+            existing->poin += poinTambah;
+        } else {
+            root = insertRec(root, id, poinTambah);
+        }
+    }
+
+    void insertDirect(string id, int poin) {
+        root = insertRec(root, id, poin);
+    }
+
+    int getPoin(string id) {
+        NodeBSTPelanggan* hasil = searchRec(root, id);
+        if (hasil) {
+            return hasil->poin;
+        }
+        return 0; // Default poin jika tidak ditemukan
+    }
+
+    string getLevel(string id) {
+        int poin = getPoin(id);
+        return hitungLevel(poin);
+    }
+
+    static int getPrioritasFromLevel(string level) {
+        if (level == "Platinum Member") return 1;
+        if (level == "Diamond Member") return 2;
+        if (level == "Gold Member") return 3;
+        if (level == "Silver Member") return 4;
+        return 5; // Bronze Member atau Non-Member
+    }
+
+    string hitungLevel(int poin) {
+        if (poin >= 500) return "Platinum Member";
+        else if (poin >= 300) return "Diamond Member";
+        else if (poin >= 150) return "Gold Member";
+        else if (poin >= 70) return "Silver Member";
+        else if (poin >= 0) return "Bronze Member";
+        else return "eror system";
+    }
+
+    void simpanKeFile(string namaFile) {
+        ofstream file(namaFile);
+        if (file.is_open()) {
+            inorderSave(root, file);
+            file.close();
+        }
+    }
+};
+
 #endif // DATA_STRUCTURES_HPP

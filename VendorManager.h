@@ -50,13 +50,12 @@ private:
         string key = Tampilan::getString("Masukkan kata kunci (Nama/Kategori)");
         string lowerKey = keHurufKecil(key);
         
+        cout << "\n" << Tampilan::CYAN << "--- Hasil Pencarian ---\n" << Tampilan::RESET;
+        
         bool found = false;
         for (auto& v : daftarVendor) {
             if (keHurufKecil(v.getNama()).find(lowerKey) != string::npos || 
                 keHurufKecil(v.getKategori()).find(lowerKey) != string::npos) {
-                if (!found) {
-                    cout << "\n--- Hasil Pencarian ---\n";
-                }
                 v.info();
                 found = true;
             }
@@ -122,6 +121,15 @@ public:
 
     DoublyLinkedList<Vendor>& getDaftarVendor() {
         return daftarVendor;
+    }
+
+    Vendor* getVendorById(int id) {
+        for (auto it = daftarVendor.begin(); it != daftarVendor.end(); ++it) {
+            if (it->getId() == id) {
+                return &(*it);
+            }
+        }
+        return nullptr;
     }
 
     void tampilkanSemua() {

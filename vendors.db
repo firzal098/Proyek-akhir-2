@@ -1,21 +1,20 @@
-111|test|ayam|test|moment,33000.000000,10
-112|Warung Budi|Makanan|Jl. Mawar No. 1|Nasi Goreng,15000.000000,50
-113|Depot Slamet|Minuman|Jl. Melati No. 5|Es Teh,3000.000000,100
-114|Toko Berkah|Sembako|Jl. Anggrek No. 10|Beras 5kg,60000.000000,20
-115|Bakso Pak Kumis|Makanan|Jl. Kenanga No. 3|Bakso Sapi,12000.000000,40
-116|Soto Lamongan|Makanan|Jl. Kamboja No. 7|Soto Ayam,18000.000000,30
-117|Jus Segar|Minuman|Jl. Dahlia No. 2|Jus Alpukat,10000.000000,25
-118|Warteg Bahari|Makanan|Jl. Flamboyan No. 8|Nasi Rames,15000.000000,60
-119|Mie Ayam Jakarta|Makanan|Jl. Teratai No. 4|Mie Ayam,13000.000000,35
-120|Kopi Kenangan|Minuman|Jl. Tulip No. 6|Kopi Susu,18000.000000,50
-121|Martabak Manis|Cemilan|Jl. Sakura No. 9|Martabak Coklat,25000.000000,15
-122|Gado-gado Bu Tini|Makanan|Jl. Bougenville No. 11|Gado-gado,14000.000000,20
-123|Sate Madura|Makanan|Jl. Cempaka No. 12|Sate Ayam,20000.000000,30
-124|Bubur Ayam Cianjur|Sarapan|Jl. Matahari No. 15|Bubur Ayam,10000.000000,45
-125|Pempek Palembang|Cemilan|Jl. Bulan No. 14|Kapal Selam,15000.000000,25
-126|Batagor Bandung|Cemilan|Jl. Bintang No. 16|Batagor,10000.000000,40
-127|Nasi Padang Murah|Makanan|Jl. Pelangi No. 18|Rendang,20000.000000,30
-128|Ayam Geprek Bensu|Makanan|Jl. Awan No. 20|Paket Geprek,22000.000000,50
-129|Es Dawet Ayu|Minuman|Jl. Petir No. 22|Es Dawet,5000.000000,60
-130|Roti Bakar Eddy|Cemilan|Jl. Hujan No. 25|Roti Coklat Keju,18000.000000,20
-131|Seafood 99|Makanan|Jl. Laut No. 30|Cumi Goreng Tepung,35000.000000,15
+101|UNIQLO|Pakaian|Fashion|Kaos Airism,199000.000000,50;Celana Jeans,599000.000000,30;Jaket Hoodie,499000.000000,25
+102|DigiPlus|Elektronik|Gadget|Smartphone XR,12500000.000000,15;Laptop Pro,25000000.000000,10;Headphone Elite,1500000.000000,40
+103|Cinema XXI|Hiburan|Film|Tiket Reguler,50000.000000,200;Popcorn Caramel,65000.000000,100;Air Mineral,15000.000000,150
+104|Food Garden|Makanan|Food Court|Nasi Goreng Spesial,45000.000000,50;Sate Ayam 10 Tusuk,55000.000000,40;Es Teh Manis,15000.000000,80
+105|Gramedia|Buku & Alat Tulis|Toko Buku|Novel "Bumi",99000.000000,60;Pulpen Gel 0.5,25000.000000,100;Buku Tulis,7500.000000,200
+106|Chatime|Minuman|F&B|Pearl Milk Tea,28000.000000,100;Grass Jelly Roasted Milk Tea,30000.000000,80;Mango Green Tea,26000.000000,90
+107|H&M|Pakaian|Fashion|Kemeja Flanel,399000.000000,40;Celana Chino,499000.000000,35
+108|SEPHORA|Kecantikan|Kosmetik|Foundation,650000.000000,20;Lipstick Matte,350000.000000,50;Parfum EDP,1200000.000000,15
+109|Sports Station|Perlengkapan Olahraga|Sport|Sepatu Lari,799000.000000,40;Jersey Bola,299000.000000,60;Tas Gym,350000.000000,30
+110|Miniso|Aksesoris|Lifestyle|Boneka Beruang,99000.000000,80;Parfum Mini,59000.000000,100;Headphone Bluetooth,159000.000000,50
+111|Starbucks|Kopi|F&B|Caffe Latte,55000.000000,100;Caramel Macchiato,65000.000000,80;Tumbler Edisi Terbatas,350000.000000,20
+112|Ace Hardware|Perkakas|Home Improvement|Bor Listrik,450000.000000,25;Lampu LED,45000.000000,200;Tangga Lipat,750000.000000,15
+113|Toys Kingdom|Mainan|Kids|Lego City,599000.000000,30;Boneka Barbie,299000.000000,40;Mobil Remote Control,350000.000000,25
+114|Guardian|Kesehatan|Health & Beauty|Vitamin C,45000.000000,150;Masker Wajah,15000.000000,300;Sabun Cuci Muka,35000.000000,100
+115|Pizza Hut|Makanan|F&B|Super Supreme Pizza,120000.000000,50;Cheese Rolls,45000.000000,60;Salad Bar,40000.000000,40
+116|iBox|Elektronik|Gadget|iPhone 15,16500000.000000,20;AirPods Pro,3500000.000000,30;iPad Air,10000000.000000,15
+117|Matahari|Pakaian|Department Store|Kemeja Pria,199000.000000,100;Dress Wanita,250000.000000,80;Sepatu Pantofel,350000.000000,50
+118|Timezone|Hiburan|Entertainment|Kartu Perdana,50000.000000,200;Boneka Claw Machine,75000.000000,50;Voucher Bermain,100000.000000,100
+119|BreadTalk|Roti|Bakery|Roti Abon,12000.000000,150;Cheesecake,180000.000000,20;Croissant,15000.000000,80
+120|Watsons|Kesehatan|Pharmacy|Suplemen Kesehatan,150000.000000,60;Shampoo Herbal,65000.000000,80;Body Lotion,45000.000000,100
