@@ -24,8 +24,11 @@ public:
     string nama;
     double harga;
     int stok;
+    string idVendor;
+    string namaVendor;
 
-    Produk(string n = "", double h = 0.0, int s = 0) : nama(n), harga(h), stok(s) {}
+    Produk(string n = "", double h = 0.0, int s = 0, string vid = "", string vnama = "") 
+        : nama(n), harga(h), stok(s), idVendor(vid), namaVendor(vnama) {}
 
     void tampilkan() const {
         cout << "    - " << Tampilan::BOLD << nama << Tampilan::RESET 

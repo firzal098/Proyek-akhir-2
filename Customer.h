@@ -4,6 +4,7 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <iomanip>
 #include "PenyimpanFile.hpp" // Akan diganti namanya nanti
 #include "Tampilan.hpp"
 #include "DataStructures.hpp" // Untuk StackRiwayat
@@ -23,7 +24,7 @@ private:
     string nomorTelepon;    // Nomor telepon yang bisa dihubungi.
     string email;           // Alamat email pelanggan.
     string password;        // Password untuk otentikasi.
-    double saldo;           // Saldo moneter yang dimiliki pelanggan untuk melakukan transaksi.
+    long double saldo;           // Saldo moneter yang dimiliki pelanggan untuk melakukan transaksi.
 
 public:
     StackRiwayat riwayatBelanja; // Riwayat belanja per pelanggan
@@ -37,7 +38,7 @@ public:
      * @param password_ Password untuk akun.
      * @param saldo_ Saldo awal (default 0.0).
      */
-    Pelanggan(string id_, string nama_, string telepon_, string email_, string password_, double saldo_ = 0.0)
+    Pelanggan(string id_, string nama_, string telepon_, string email_, string password_, long double saldo_ = 0.0)
         : idPelanggan(id_), nama(nama_), nomorTelepon(telepon_), email(email_), password(password_), saldo(saldo_) {}
 
     /**
@@ -55,14 +56,14 @@ public:
     string getNomorTelepon() const { return nomorTelepon; }
     string getEmail() const { return email; }
     string getPassword() const { return password; }
-    double getSaldo() const { return saldo; }
+    long double getSaldo() const { return saldo; }
 
     // --- Bagian Setter ---
     /**
      * @brief Mengatur atau memperbarui saldo pelanggan.
      * @param newSaldo Jumlah saldo baru.
      */
-    void setSaldo(double newSaldo) {
+    void setSaldo(long double newSaldo) {
         saldo = newSaldo;
     }
 
@@ -76,7 +77,7 @@ public:
         cout << Tampilan::BOLD << "Nama           : " << Tampilan::RESET << nama << endl;
         cout << Tampilan::BOLD << "No. Telepon    : " << Tampilan::RESET << nomorTelepon << endl;
         cout << Tampilan::BOLD << "Email          : " << Tampilan::RESET << email << endl;
-        cout << Tampilan::BOLD << "Saldo          : " << Tampilan::GREEN << "Rp" << saldo << Tampilan::RESET << endl;
+        cout << Tampilan::BOLD << "Saldo          : " << Tampilan::GREEN << "Rp" << fixed << setprecision(2) << saldo << Tampilan::RESET << endl;
     }
 
     /**
@@ -119,7 +120,7 @@ public:
         string telepon = (it != token.end()) ? *it : ""; ++it;
         string email = (it != token.end()) ? *it : ""; ++it;
         string password = (it != token.end()) ? *it : ""; ++it;
-        double saldo = (it != token.end()) ? stod(*it) : 0.0;
+        long double saldo = (it != token.end()) ? stold(*it) : 0.0;
 
         return Pelanggan(id, nama, telepon, email, password, saldo);
     }

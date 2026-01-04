@@ -9,21 +9,21 @@ using namespace std;
 // Struktur untuk Node Tree menggunakan Template
 // T adalah tipe data untuk Value (bisa struct, class, string, dll)
 template <typename T>
-struct Node {
-    int key;       // Key tetap integer untuk pengurutan
-    T value;       // Value menyimpan objek/data
-    Node<T>* left;
-    Node<T>* right;
+struct AVLNode {
+    double key;       // Key diubah menjadi double untuk harga
+    DoublyLinkedList<T> valueList; // Value menyimpan list objek/data
+    AVLNode<T>* left;
+    AVLNode<T>* right;
     int height;
 };
 
 template <typename T>
 class AVLTree {
 private:
-    Node<T>* root;
+    AVLNode<T>* root;
 
     // Fungsi utilitas untuk mendapatkan tinggi node
-    int getHeight(Node<T>* N) {
+    int getHeight(AVLNode<T>* N) {
         if (N == NULL)
             return 0;
         return N->height;
@@ -35,10 +35,10 @@ private:
     }
 
     // Membuat node baru dengan Key dan Value
-    Node<T>* newNode(int key, T value) {
-        Node<T>* node = new Node<T>();
+    AVLNode<T>* newNode(double key, T value) {
+        AVLNode<T>* node = new AVLNode<T>();
         node->key = key;
-        node->value = value;
+        node->valueList.push_back(value); // Masukkan value pertama ke dalam list
         node->left = NULL;
         node->right = NULL;
         node->height = 1;
@@ -46,9 +46,9 @@ private:
     }
 
     // Rotasi Kanan
-    Node<T>* rightRotate(Node<T>* y) {
-        Node<T>* x = y->left;
-        Node<T>* T2 = x->right;
+    AVLNode<T>* rightRotate(AVLNode<T>* y) {
+        AVLNode<T>* x = y->left;
+        AVLNode<T>* T2 = x->right;
 
         x->right = y;
         y->left = T2;
@@ -60,9 +60,9 @@ private:
     }
 
     // Rotasi Kiri
-    Node<T>* leftRotate(Node<T>* x) {
-        Node<T>* y = x->right;
-        Node<T>* T2 = y->left;
+    AVLNode<T>* leftRotate(AVLNode<T>* x) {
+        AVLNode<T>* y = x->right;
+        AVLNode<T>* T2 = y->left;
 
         y->left = x;
         x->right = T2;
@@ -74,14 +74,14 @@ private:
     }
 
     // Get Balance Factor
-    int getBalance(Node<T>* N) {
+    int getBalance(AVLNode<T>* N) {
         if (N == NULL)
             return 0;
         return getHeight(N->left) - getHeight(N->right);
     }
 
     // Insert dengan Key dan Value
-    Node<T>* insertNode(Node<T>* node, int key, T value) {
+    AVLNode<T>* insertNode(AVLNode<T>* node, double key, T value) {
         // 1. Standar BST insert
         if (node == NULL)
             return newNode(key, value);
@@ -91,8 +91,8 @@ private:
         else if (key > node->key)
             node->right = insertNode(node->right, key, value);
         else {
-            // Jika key sama, update valuenya dengan data baru
-            node->value = value; 
+            // Jika key sama, tambahkan value ke list yang ada
+            node->valueList.push_back(value); 
             return node;
         }
 
@@ -128,15 +128,15 @@ private:
     }
 
     // Cari node terkecil untuk keperluan delete
-    Node<T>* minValueNode(Node<T>* node) {
-        Node<T>* current = node;
+    AVLNode<T>* minValueNode(AVLNode<T>* node) {
+        AVLNode<T>* current = node;
         while (current->left != NULL)
             current = current->left;
         return current;
     }
 
     // Delete node
-    Node<T>* deleteNode(Node<T>* root, int key) {
+    AVLNode<T>* deleteNode(AVLNode<T>* root, double key) {
         if (root == NULL)
             return root;
 
@@ -145,9 +145,9 @@ private:
         else if (key > root->key)
             root->right = deleteNode(root->right, key);
         else {
-            // Node ditemukan
+            // Node ditemukan, untuk saat ini akan menghapus semua produk dengan harga yang sama
             if ((root->left == NULL) || (root->right == NULL)) {
-                Node<T>* temp = root->left ? root->left : root->right;
+                AVLNode<T>* temp = root->left ? root->left : root->right;
 
                 if (temp == NULL) {
                     temp = root;
@@ -160,11 +160,11 @@ private:
             }
             else {
                 // Node dengan 2 anak
-                Node<T>* temp = minValueNode(root->right);
+                AVLNode<T>* temp = minValueNode(root->right);
 
                 // Salin KEY dan VALUE dari successor
                 root->key = temp->key;
-                root->value = temp->value; 
+                root->valueList = temp->valueList; 
 
                 root->right = deleteNode(root->right, temp->key);
             }
@@ -197,15 +197,19 @@ private:
     }
 
     // Fungsi helper rekursif untuk mengisi list
-    void inorderToList(Node<T>* root, DoublyLinkedList<T>& list) {
+    void inorderToList(AVLNode<T>* root, DoublyLinkedList<T>& list) {
         if (root != NULL) {
             inorderToList(root->left, list);
-            list.push_back(root->value); // Masukkan value ke list
+            // Masukkan semua value dari list di node ini ke list utama
+            AVLNode<T>* current = root;
+            for (int i = 0; i < current->valueList.size(); ++i) {
+                list.push_back(current->valueList[i]);
+            }
             inorderToList(root->right, list);
         }
     }
 
-    void inorder(Node<T>* root) {
+    void inorder(AVLNode<T>* root) {
         if (root != NULL) {
             inorder(root->left);
             cout << root->key << " ";
@@ -213,7 +217,7 @@ private:
         }
     }
 
-    void preorder(Node<T>* root) {
+    void preorder(AVLNode<T>* root) {
         if (root != NULL) {
             cout << root->key << " ";
             preorder(root->left);
@@ -222,7 +226,7 @@ private:
     }
 
     // Helper internal untuk pencarian
-    Node<T>* findNode(Node<T>* node, int key) {
+    AVLNode<T>* findNode(AVLNode<T>* node, double key) {
         if (node == NULL || node->key == key)
             return node;
         
@@ -237,20 +241,20 @@ public:
         root = NULL;
     }
 
-    // Insert sekarang menerima key (int) dan value (T)
-    void insert(int key, T value) {
+    // Insert sekarang menerima key (double) dan value (T)
+    void insert(double key, T value) {
         root = insertNode(root, key, value);
     }
 
-    void remove(int key) {
+    void remove(double key) {
         root = deleteNode(root, key);
     }
 
-    // Fungsi baru: Mencari value berdasarkan key
-    bool search(int key, T& result) {
-        Node<T>* node = findNode(root, key);
+    // Fungsi baru: Mencari list value berdasarkan key
+    bool search(double key, DoublyLinkedList<T>& result) {
+        AVLNode<T>* node = findNode(root, key);
         if (node != NULL) {
-            result = node->value;
+            result = node->valueList;
             return true;
         }
         return false;

@@ -11,16 +11,21 @@
 #include "ParkingManager.h"
 #include "VendorManager.h" 
 #include "Tampilan.hpp"       // <-- Include library Tampilan
+#include "AVLTree.hpp"        // <-- Include AVL Tree
 #include <iostream>
 #include <string>
 #include <limits>
+#include <iomanip>
+
+#include <algorithm>
 
 using namespace std;
 
-//--- Global Objects for Order Processing ---
+//--- Global Objects ---
 PriorityQueuePesanan antrianPesanan;
 StackRiwayat riwayatTransaksiAdmin;
-// -----------------------------------------
+AVLTree<Produk> pohonProduk; // <-- AVL Tree global untuk semua produk
+// --------------------
 
 
 // --- Deklarasi Fungsi ---
@@ -32,8 +37,143 @@ void menuAdmin(ManajerPelanggan& manajerPelanggan, ManajerParkir& manajerParkir,
 void prosesPesanan(ManajerPelanggan& manajerPelanggan, ManajerVendor& manajerVendor);
 void undoTransaksiTerakhir(ManajerPelanggan& manajerPelanggan, ManajerVendor& manajerVendor);
 void tampilkanDetailPesanan(const Pesanan& p, ManajerPelanggan& manajerPelanggan);
+void menuJelajahiProduk(Pelanggan* pelanggan, ManajerPelanggan& manajerPelanggan);
+
 
 // --- Implementasi Fungsi ---
+
+/**
+ * @brief Menampilkan semua produk dari semua vendor, diurutkan berdasarkan harga.
+ */
+void menuJelajahiProduk(Pelanggan* pelanggan, ManajerPelanggan& manajerPelanggan) {
+    Tampilan::printHeader("Jelajahi Semua Produk (Urut Harga)");
+    DoublyLinkedList<Produk> semuaProduk = pohonProduk.getInOrderList();
+
+    if (semuaProduk.empty()) {
+        Tampilan::printMessage("Saat ini tidak ada produk yang tersedia.");
+        Tampilan::pause();
+        return;
+    }
+
+    int halaman = 0;
+    const int itemPerHalaman = 5;
+
+    while (true) {
+        Tampilan::clearScreen();
+        Tampilan::printHeader("Jelajahi Semua Produk (Halaman " + to_string(halaman + 1) + ")");
+        cout << "Saldo Anda: " << Tampilan::GREEN << "Rp" << fixed << setprecision(2) << pelanggan->getSaldo() << Tampilan::RESET << endl << endl;
+
+        int startIndex = halaman * itemPerHalaman;
+        int endIndex = std::min(startIndex + itemPerHalaman, static_cast<int>(semuaProduk.size()));
+
+        if (startIndex >= semuaProduk.size() && !semuaProduk.empty()) {
+            Tampilan::printMessage("Tidak ada produk lagi untuk ditampilkan.");
+            halaman--; 
+            Tampilan::pause();
+            continue;
+        }
+        
+        cout << Tampilan::CYAN << "--- Menampilkan produk " << startIndex + 1 << " - " << endIndex << " dari " << semuaProduk.size() << " ---\n" << Tampilan::RESET;
+        for (int i = startIndex; i < endIndex; ++i) {
+            Produk p = semuaProduk[i];
+            cout << Tampilan::BOLD << (i + 1) << ". " << p.nama << Tampilan::RESET
+                 << " dari " << Tampilan::YELLOW << p.namaVendor << Tampilan::RESET
+                 << Tampilan::DIM << " (Stok: " << p.stok << ")" << Tampilan::RESET
+                 << Tampilan::GREEN << " - Rp" << p.harga << Tampilan::RESET << endl;
+        }
+
+        cout << "\n";
+        DoublyLinkedList<string> menuNavigasi;
+        if (halaman > 0) menuNavigasi.push_back("Halaman Sebelumnya (P)");
+        if (endIndex < semuaProduk.size()) menuNavigasi.push_back("Halaman Berikutnya (N)");
+        menuNavigasi.push_back("Kembali (Q)");
+
+        // Tampilkan menu navigasi kustom
+        cout << Tampilan::BOLD << "NAVIGASI:" << Tampilan::RESET << endl;
+        for(auto it = menuNavigasi.begin(); it != menuNavigasi.end(); ++it){
+            cout << " - " << *it << endl;
+        }
+        
+        string pilihan = Tampilan::getString("\nKetik nomor produk untuk membeli, atau pilih navigasi (P/N/Q)");
+
+        // Cek apakah input adalah navigasi
+        if (pilihan == "p" || pilihan == "P") {
+            if (halaman > 0) halaman--;
+            continue;
+        } else if (pilihan == "n" || pilihan == "N") {
+            if (endIndex < semuaProduk.size()) halaman++;
+            continue;
+        } else if (pilihan == "q" || pilihan == "Q") {
+            break;
+        }
+
+        // Jika bukan navigasi, coba proses sebagai nomor produk
+        try {
+            int noProduk = stoi(pilihan);
+            int indexProduk = noProduk - 1;
+
+            if (indexProduk >= startIndex && indexProduk < endIndex) {
+                // Produk valid, lanjutkan proses pembelian
+                Produk& targetProduk = semuaProduk[indexProduk];
+                
+                Tampilan::clearScreen();
+                Tampilan::printHeader("Antrikan Pesanan");
+                cout << "Anda akan membeli: " << Tampilan::BOLD << targetProduk.nama << Tampilan::RESET << " dari " << Tampilan::YELLOW << targetProduk.namaVendor << Tampilan::RESET << endl;
+                cout << "Harga Satuan: Rp" << targetProduk.harga << endl;
+                cout << "Stok Tersedia: " << targetProduk.stok << endl;
+                
+                int jumlahBeli = Tampilan::getInt("\nMasukkan jumlah yang ingin dibeli");
+
+                if(jumlahBeli <= 0){
+                    Tampilan::printError("Jumlah beli harus lebih dari 0.");
+                    Tampilan::pause();
+                    continue;
+                }
+
+                double totalHarga = targetProduk.harga * jumlahBeli;
+                if (pelanggan->getSaldo() < totalHarga) {
+                    Tampilan::printError("Transaksi gagal: Saldo tidak mencukupi.");
+                    Tampilan::pause();
+                    continue;
+                }
+                if (targetProduk.stok < jumlahBeli) {
+                    Tampilan::printError("Transaksi gagal: Stok tidak mencukupi.");
+                    Tampilan::pause();
+                    continue;
+                }
+
+                // Logika untuk enqueue pesanan
+                string level = manajerPelanggan.getLevelPelanggan(pelanggan->getId());
+                int prioritas = BSTLoyalitasPelanggan::getPrioritasFromLevel(level);
+
+                Pesanan pesananBaru;
+                pesananBaru.idPelanggan = pelanggan->getId();
+                pesananBaru.idVendor = targetProduk.idVendor;
+                pesananBaru.namaProduk = targetProduk.nama;
+                pesananBaru.jumlah = jumlahBeli;
+                pesananBaru.totalHarga = totalHarga;
+                pesananBaru.prioritas = prioritas;
+                
+                antrianPesanan.enqueue(pesananBaru);
+                
+                Tampilan::printMessage("Pesanan Anda telah berhasil ditambahkan ke antrian!", Tampilan::GREEN);
+                Tampilan::printMessage("Admin akan segera memprosesnya.");
+                Tampilan::pause();
+
+            } else {
+                Tampilan::printError("Nomor produk tidak valid di halaman ini.");
+                Tampilan::pause();
+            }
+        } catch (const std::invalid_argument& e) {
+            Tampilan::printError("Input tidak valid. Silakan coba lagi.");
+            Tampilan::pause();
+        } catch (const std::out_of_range& e) {
+            Tampilan::printError("Input numerik terlalu besar. Silakan coba lagi.");
+            Tampilan::pause();
+        }
+    }
+}
+
 
 /**
  * @brief Menampilkan detail sebuah objek Pesanan secara terformat.
@@ -203,7 +343,7 @@ void menuBeriSaldo(ManajerPelanggan& manajerPelanggan) {
     }
 
     cout << Tampilan::BOLD << Tampilan::YELLOW << "-> Masukkan jumlah saldo yang akan ditambahkan: " << Tampilan::RESET;
-    double jumlahSaldo;
+    long double jumlahSaldo;
     cin >> jumlahSaldo;
     cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
@@ -218,7 +358,7 @@ void menuBeriSaldo(ManajerPelanggan& manajerPelanggan) {
     manajerPelanggan.simpanData();
 
     Tampilan::printMessage("Saldo berhasil ditambahkan!", Tampilan::GREEN);
-    cout << "Saldo baru untuk " << pelanggan->getNama() << " adalah Rp" << pelanggan->getSaldo() << endl;
+    cout << "Saldo baru untuk " << pelanggan->getNama() << " adalah Rp" << fixed << setprecision(2) << pelanggan->getSaldo() << endl;
     Tampilan::pause();
 }
 
@@ -227,7 +367,7 @@ void menuBeriSaldo(ManajerPelanggan& manajerPelanggan) {
  */
 void menuToko(Pelanggan* pelanggan, ManajerVendor& manajerVendor, ManajerPelanggan& manajerPelanggan) {
     Tampilan::printHeader("Toko Vendor");
-    cout << "Saldo Anda: " << Tampilan::GREEN << "Rp" << pelanggan->getSaldo() << Tampilan::RESET << endl;
+    cout << "Saldo Anda: " << Tampilan::GREEN << "Rp" << fixed << setprecision(2) << pelanggan->getSaldo() << Tampilan::RESET << endl;
 
     cout << "\n--- Daftar Vendor Tersedia ---\n";
     manajerVendor.tampilkanSemua();
@@ -353,7 +493,8 @@ void menuKlien(Pelanggan* pelangganMasuk, ManajerParkir& manajerParkir, ManajerV
         
         DoublyLinkedList<string> menuItems;
         menuItems.push_back("Masuk Menu Parkir");
-        menuItems.push_back("Jelajahi Vendor (Toko)");
+        menuItems.push_back("Jelajahi Semua Produk (Baru!)");
+        menuItems.push_back("Jelajahi per-Vendor (Toko)");
         menuItems.push_back("Logout");
         Tampilan::printMenu(menuItems);
         int pilihan = Tampilan::getChoice();
@@ -363,9 +504,12 @@ void menuKlien(Pelanggan* pelangganMasuk, ManajerParkir& manajerParkir, ManajerV
                 manajerParkir.tampilkanMenu(pelangganMasuk, manajerPelanggan);
                 break;
             case 2:
-                menuToko(pelangganMasuk, manajerVendor, manajerPelanggan);
+                menuJelajahiProduk(pelangganMasuk, manajerPelanggan);
                 break;
             case 3:
+                menuToko(pelangganMasuk, manajerVendor, manajerPelanggan);
+                break;
+            case 4:
                 return;
             default:
                 Tampilan::printError("Pilihan tidak valid.");
@@ -466,6 +610,20 @@ int main() {
     ManajerPelanggan manajerPelanggan("pelanggan.db"); 
     ManajerParkir manajerParkir;
     ManajerVendor manajerVendor; 
+
+    // --- Populasi AVL Tree ---
+    DoublyLinkedList<Vendor>& semuaVendor = manajerVendor.getDaftarVendor();
+    for(auto it = semuaVendor.begin(); it != semuaVendor.end(); ++it) {
+        Vendor& vendor = *it;
+        DoublyLinkedList<Produk>& produkVendor = vendor.getDaftarProduk();
+        for(auto prodIt = produkVendor.begin(); prodIt != produkVendor.end(); ++prodIt) {
+            Produk p = *prodIt;
+            p.idVendor = to_string(vendor.getId());
+            p.namaVendor = vendor.getNama();
+            pohonProduk.insert(p.harga, p);
+        }
+    }
+    // -------------------------
 
     while (true) {
         Pelanggan* pelangganMasuk = nullptr; 
