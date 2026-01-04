@@ -196,7 +196,7 @@ private:
         return root;
     }
 
-    // Fungsi helper rekursif untuk mengisi list
+    // Fungsi helper rekursif untuk mengisi list (non-const)
     void inorderToList(AVLNode<T>* root, DoublyLinkedList<T>& list) {
         if (root != NULL) {
             inorderToList(root->left, list);
@@ -206,6 +206,19 @@ private:
                 list.push_back(current->valueList[i]);
             }
             inorderToList(root->right, list);
+        }
+    }
+
+    // Fungsi helper rekursif untuk mengisi list (const overload)
+    void inorderToList(const AVLNode<T>* root, DoublyLinkedList<T>& list) const {
+        if (root != NULL) {
+            inorderToList(root->left, list); // Rekursif panggil versi const ini
+            // Masukkan semua value dari list di node ini ke list utama
+            const AVLNode<T>* current = root; // 'current' juga harus const
+            for (int i = 0; i < current->valueList.size(); ++i) {
+                list.push_back(current->valueList[i]);
+            }
+            inorderToList(root->right, list); // Rekursif panggil versi const ini
         }
     }
 
@@ -261,7 +274,7 @@ public:
     }
 
     // Fungsi baru: Mengembalikan semua value dalam bentuk DoublyLinkedList terurut (Inorder)
-    DoublyLinkedList<T> getInOrderList() {
+    DoublyLinkedList<T> getInOrderList() const {
         DoublyLinkedList<T> list;
         inorderToList(root, list);
         return list;

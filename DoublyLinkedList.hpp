@@ -428,6 +428,23 @@ public:
     }
 
     /**
+     * @brief Mengakses elemen pada indeks tertentu menggunakan operator [] (const version).
+     * @param index Indeks dari elemen yang ingin diakses.
+     * @return Const referensi ke data pada indeks tersebut.
+     * @throws std::out_of_range jika indeks di luar batas.
+     */
+    const T& operator[](size_t index) const { // Note 'const' at the end
+        if (index >= m_size) {
+            throw out_of_range("Indeks di luar jangkauan");
+        }
+        const Node<T>* current = head; // 'current' should be const Node<T>*
+        for (size_t i = 0; i < index; ++i) {
+            current = current->next;
+        }
+        return current->data;
+    }
+
+    /**
      * @brief Memeriksa apakah list kosong.
      * @return true jika list tidak memiliki elemen, false jika sebaliknya.
      */

@@ -12,6 +12,7 @@
 #include "VendorManager.h" 
 #include "Tampilan.hpp"       // <-- Include library Tampilan
 #include "AVLTree.hpp"        // <-- Include AVL Tree
+#include "KTPManager.h"       // <-- Include KTP Manager
 #include <iostream>
 #include <string>
 #include <limits>
@@ -38,9 +39,46 @@ void prosesPesanan(ManajerPelanggan& manajerPelanggan, ManajerVendor& manajerVen
 void undoTransaksiTerakhir(ManajerPelanggan& manajerPelanggan, ManajerVendor& manajerVendor);
 void tampilkanDetailPesanan(const Pesanan& p, ManajerPelanggan& manajerPelanggan);
 void menuJelajahiProduk(Pelanggan* pelanggan, ManajerPelanggan& manajerPelanggan);
+void menuEditKTP(Pelanggan* pelanggan, ManajerPelanggan& manajerPelanggan);
+void menuAdminKTP(ManajerPelanggan& manajerPelanggan);
 
 
-// --- Implementasi Fungsi ---
+
+
+/**
+ * @brief Menu untuk admin mencari dan mengelola KTP.
+ */
+void menuAdminKTP(ManajerPelanggan& manajerPelanggan) {
+    KTPManager& ktpMgr = manajerPelanggan.getKTPManager();
+    
+    while (true) {
+        Tampilan::printHeader("Manajemen KTP - Admin (AVL Tree)");
+        DoublyLinkedList<string> menuItems;
+        menuItems.push_back("Tampilkan Semua KTP");
+        menuItems.push_back("Cari KTP (berdasarkan NIK/Nama)");
+        menuItems.push_back("Kembali");
+        Tampilan::printMenu(menuItems);
+        int pilihan = Tampilan::getChoice();
+
+        switch (pilihan) {
+            case 1:
+                ktpMgr.tampilkanSemuaKTP();
+                Tampilan::pause();
+                break;
+            case 2: {
+                string kriteria = Tampilan::getString("Masukkan NIK atau Nama yang dicari");
+                ktpMgr.cariKTP(kriteria);
+                Tampilan::pause();
+                break;
+            }
+            case 3:
+                return;
+            default:
+                Tampilan::printError("Pilihan tidak valid.");
+                Tampilan::pause();
+        }
+    }
+}
 
 /**
  * @brief Menampilkan semua produk dari semua vendor, diurutkan berdasarkan harga.
@@ -324,7 +362,146 @@ void undoTransaksiTerakhir(ManajerPelanggan& manajerPelanggan, ManajerVendor& ma
 
 
 /**
- * @brief Menampilkan menu untuk admin agar dapat menambahkan saldo ke akun pelanggan.
+ * @brief Menu untuk mengedit data KTP pelanggan.
+ */
+void menuEditKTP(Pelanggan* pelanggan, ManajerPelanggan& manajerPelanggan) {
+    Tampilan::printHeader("Edit Data KTP");
+    KTPManager& ktpMgr = manajerPelanggan.getKTPManager();
+    
+    if (pelanggan->hasKTP()) {
+        cout << Tampilan::YELLOW << "Anda sudah memiliki data KTP. Berikut data Anda:\n" << Tampilan::RESET << endl;
+        KTP* ktpAda = ktpMgr.cariKTPByNIK(pelanggan->getIdKTP());
+        if (ktpAda) {
+            ktpAda->cetak();
+            delete ktpAda;
+        }
+        
+        string tanya = Tampilan::getString("Apakah Anda ingin mengganti KTP? (Y/N)");
+        if (tanya != "Y" && tanya != "y") {
+            Tampilan::pause();
+            return;
+        }
+    }
+    
+    cout << "\n--- Input Data KTP ---\n";
+    
+    string nik = Tampilan::getString("NIK (16 digit)");
+    if (nik.length() != 16) {
+        Tampilan::printError("NIK harus 16 digit!");
+        Tampilan::pause();
+        return;
+    }
+    
+    string namaKTP = Tampilan::getString("Nama (sesuai KTP)");
+    string tempatLahir = Tampilan::getString("Tempat Lahir");
+    
+    cout << Tampilan::BOLD << Tampilan::YELLOW << "-> Tanggal Lahir (HH MM YYYY): " << Tampilan::RESET;
+    int hariLahir, bulanLahir, tahunLahir;
+    cin >> hariLahir >> bulanLahir >> tahunLahir;
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    
+    Tanggal tglLahir = {hariLahir, bulanLahir, tahunLahir};
+    
+    cout << Tampilan::BOLD << Tampilan::YELLOW << "-> Jenis Kelamin (1=Laki-laki, 2=Perempuan): " << Tampilan::RESET;
+    int pilihanGender;
+    cin >> pilihanGender;
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    JenisKelamin jk = (pilihanGender == 1) ? LAKI_LAKI : PEREMPUAN;
+    
+    cout << Tampilan::BOLD << Tampilan::YELLOW << "-> Golongan Darah (1=A, 2=B, 3=AB, 4=O, 5=Tidak Tahu): " << Tampilan::RESET;
+    int pilihanDarah;
+    cin >> pilihanDarah;
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    GolonganDarah golDarah;
+    switch(pilihanDarah) {
+        case 1: golDarah = A; break;
+        case 2: golDarah = B; break;
+        case 3: golDarah = AB; break;
+        case 4: golDarah = O; break;
+        default: golDarah = TIDAK_TAHU;
+    }
+    
+    cout << "\n--- Input Alamat Lengkap ---\n";
+    string jalan = Tampilan::getString("Jalan");
+    cout << Tampilan::BOLD << Tampilan::YELLOW << "-> RT (contoh: 3): " << Tampilan::RESET;
+    int rt;
+    cin >> rt;
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    
+    cout << Tampilan::BOLD << Tampilan::YELLOW << "-> RW (contoh: 5): " << Tampilan::RESET;
+    int rw;
+    cin >> rw;
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    
+    string kelurahan = Tampilan::getString("Kelurahan/Desa");
+    string kecamatan = Tampilan::getString("Kecamatan");
+    string kotaKabupaten = Tampilan::getString("Kota/Kabupaten");
+    string provinsi = Tampilan::getString("Provinsi");
+    
+    Alamat alamat = {jalan, rt, rw, kelurahan, kecamatan, kotaKabupaten, provinsi};
+    
+    cout << Tampilan::BOLD << Tampilan::YELLOW << "-> Agama (1=Islam, 2=Kristen, 3=Katolik, 4=Hindu, 5=Buddha, 6=Konghucu, 7=Lainnya): " << Tampilan::RESET;
+    int pilihanAgama;
+    cin >> pilihanAgama;
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    Agama agama;
+    switch(pilihanAgama) {
+        case 1: agama = ISLAM; break;
+        case 2: agama = KRISTEN; break;
+        case 3: agama = KATOLIK; break;
+        case 4: agama = HINDU; break;
+        case 5: agama = BUDDHA; break;
+        case 6: agama = KONGHUCU; break;
+        default: agama = LAINNYA;
+    }
+    
+    cout << Tampilan::BOLD << Tampilan::YELLOW << "-> Status Perkawinan (1=Belum Kawin, 2=Kawin, 3=Cerai Hidup, 4=Cerai Mati): " << Tampilan::RESET;
+    int pilihanStatus;
+    cin >> pilihanStatus;
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    StatusPerkawinan status;
+    switch(pilihanStatus) {
+        case 1: status = BELUM_KAWIN; break;
+        case 2: status = KAWIN; break;
+        case 3: status = CERAI_HIDUP; break;
+        case 4: status = CERAI_MATI; break;
+        default: status = BELUM_KAWIN;
+    }
+    
+    string pekerjaan = Tampilan::getString("Pekerjaan");
+    
+    cout << Tampilan::BOLD << Tampilan::YELLOW << "-> Kewarganegaraan (1=WNI, 2=WNA): " << Tampilan::RESET;
+    int pilihanKwn;
+    cin >> pilihanKwn;
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    Kewarganegaraan kwn = (pilihanKwn == 1) ? WNI : WNA;
+    
+    cout << Tampilan::BOLD << Tampilan::YELLOW << "-> Berlaku Seumur Hidup? (1=Ya, 0=Tidak): " << Tampilan::RESET;
+    int seumurHidup;
+    cin >> seumurHidup;
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    
+    Tanggal tglBerlaku = {0, 0, 0};
+    if (seumurHidup != 1) {
+        cout << Tampilan::BOLD << Tampilan::YELLOW << "-> Tanggal Berlaku Hingga (HH MM YYYY): " << Tampilan::RESET;
+        cin >> tglBerlaku.hari >> tglBerlaku.bulan >> tglBerlaku.tahun;
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    }
+    
+    KTP ktpBaru(nik, namaKTP, tempatLahir, tglLahir, jk, golDarah, alamat, agama, status, pekerjaan, kwn, seumurHidup == 1, tglBerlaku);
+    string ktpId = ktpMgr.simpanKTP(ktpBaru);
+    pelanggan->setIdKTP(ktpId);
+    
+    manajerPelanggan.simpanData();
+    
+    Tampilan::printMessage("Data KTP berhasil disimpan!", Tampilan::GREEN);
+    cout << "\nPreview Data KTP Anda:\n";
+    ktpBaru.cetak();
+    Tampilan::pause();
+}
+
+/**
+ * @brief Menampilkan menu utama untuk admin agar dapat menambahkan saldo ke akun pelanggan.
  * @param manajerPelanggan Referensi ke manajer pelanggan untuk mengakses data pelanggan.
  */
 void menuBeriSaldo(ManajerPelanggan& manajerPelanggan) {
@@ -495,6 +672,8 @@ void menuKlien(Pelanggan* pelangganMasuk, ManajerParkir& manajerParkir, ManajerV
         menuItems.push_back("Masuk Menu Parkir");
         menuItems.push_back("Jelajahi Semua Produk (Baru!)");
         menuItems.push_back("Jelajahi per-Vendor (Toko)");
+        menuItems.push_back("Edit Data KTP");
+        menuItems.push_back("Lihat KTP");
         menuItems.push_back("Logout");
         Tampilan::printMenu(menuItems);
         int pilihan = Tampilan::getChoice();
@@ -510,6 +689,23 @@ void menuKlien(Pelanggan* pelangganMasuk, ManajerParkir& manajerParkir, ManajerV
                 menuToko(pelangganMasuk, manajerVendor, manajerPelanggan);
                 break;
             case 4:
+                menuEditKTP(pelangganMasuk, manajerPelanggan);
+                break;
+            case 5:
+                if (pelangganMasuk->hasKTP()) {
+                    Tampilan::printHeader("Data KTP Anda");
+                    KTP* ktpData = manajerPelanggan.getKTPManager().cariKTPByNIK(pelangganMasuk->getIdKTP());
+                    if (ktpData) {
+                        ktpData->cetak();
+                        delete ktpData;
+                    }
+                    Tampilan::pause();
+                } else {
+                    Tampilan::printError("Anda belum memiliki data KTP. Silakan isi data KTP terlebih dahulu.");
+                    Tampilan::pause();
+                }
+                break;
+            case 6:
                 return;
             default:
                 Tampilan::printError("Pilihan tidak valid.");
@@ -529,6 +725,7 @@ void menuAdmin(ManajerPelanggan& manajerPelanggan, ManajerParkir& manajerParkir,
         menuItems.push_back("Manajemen Parkir");
         menuItems.push_back("Manajemen Vendor");
         menuItems.push_back("Beri Saldo ke Pelanggan");
+        menuItems.push_back("Manajemen KTP (AVL Tree)");
         menuItems.push_back("Lihat Antrian Pesanan (Priority Queue)");
         menuItems.push_back("Proses Pesanan Berikutnya (Priority Queue)");
         menuItems.push_back("Undo Pembelanjaan Terakhir (Stack)");
@@ -552,11 +749,14 @@ void menuAdmin(ManajerPelanggan& manajerPelanggan, ManajerParkir& manajerParkir,
                 menuBeriSaldo(manajerPelanggan);
                 break;
             case 5:
+                menuAdminKTP(manajerPelanggan);
+                break;
+            case 6:
                 Tampilan::printHeader("Antrian Pesanan (Priority Queue)");
                 antrianPesanan.tampilkan();
                 Tampilan::pause();
                 break;
-            case 6:
+            case 7:
                 {
                     if (antrianPesanan.isEmpty()) {
                         Tampilan::printMessage("Tidak ada pesanan untuk diproses.");
@@ -575,7 +775,7 @@ void menuAdmin(ManajerPelanggan& manajerPelanggan, ManajerParkir& manajerParkir,
                     Tampilan::pause();
                 }
                 break;
-            case 7:
+            case 8:
                 {
                     if (riwayatTransaksiAdmin.isEmpty()) {
                         Tampilan::printMessage("Tidak ada transaksi untuk di-undo.");
@@ -594,7 +794,7 @@ void menuAdmin(ManajerPelanggan& manajerPelanggan, ManajerParkir& manajerParkir,
                     Tampilan::pause();
                 }
                 break;
-            case 8:
+            case 9:
                 return;
             default:
                 Tampilan::printError("Pilihan tidak valid.");

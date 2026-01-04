@@ -6,6 +6,7 @@
 #include "PenyimpanFile.hpp" 
 #include "RandomGenerator.hpp"
 #include "Tampilan.hpp"
+#include "KTPManager.h"
 
 #include <string>
 #include <iostream>
@@ -23,7 +24,8 @@ private:
     DoublyLinkedList<Pelanggan> daftarPelanggan; 
     string fileDataPelanggan;
     BSTLoyalitasPelanggan bstLoyalitas;
-    string filePoinLoyalitas = "poin_loyalitas.db";                   
+    string filePoinLoyalitas = "poin_loyalitas.db";
+    KTPManager ktpManager; // KTP Manager instance                   
 
     /**
      * @brief Memeriksa apakah sebuah ID pelanggan sudah ada dalam daftar.
@@ -59,6 +61,7 @@ public:
     void simpanData() {
         PenyimpanFile::simpanKeFile(fileDataPelanggan, daftarPelanggan, Pelanggan::serialisasi);
         bstLoyalitas.simpanKeFile(filePoinLoyalitas);
+        ktpManager.simpanSemuaKeFile();
     }
 
     /**
@@ -110,6 +113,13 @@ public:
             }
         }
         return nullptr;
+    }
+
+    /**
+     * @brief Get KTP Manager untuk akses KTP operations.
+     */
+    KTPManager& getKTPManager() {
+        return ktpManager;
     }
 
     // --- Fungsi terkait Loyalitas ---

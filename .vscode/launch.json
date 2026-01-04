@@ -1,6 +1,8 @@
 {
     "version": "2.0.0",
     "configurations": [
+       
+
         {
             "name": "Build & Run Current File",
             "type": "cppvsdbg",
