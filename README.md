@@ -1,104 +1,71 @@
-# Proyek Sistem Manajemen Parkir dan Penjualan
+Simple Web Interface
 
-## Deskripsi Proyek
-Proyek ini adalah sistem berbasis konsol yang dirancang untuk mengelola parkir, data pelanggan, vendor, KTP, dan transaksi penjualan produk. Sistem ini dibangun menggunakan C++ dan memanfaatkan berbagai struktur data untuk efisiensi dan pengelolaan data yang terstruktur. Fitur utama mencakup registrasi dan manajemen pelanggan, pengelolaan KTP, sistem parkir, manajemen vendor dan produk, serta antrian pesanan dengan prioritas.
+Fitur yang didukung:
+- Register / Login (admin: `admin` / `admin123`)
+- Admin: lihat pelanggan, beri saldo, tambah vendor, tambah produk
+- Pelanggan: lihat profil & saldo, beli produk, check-in/check-out parkir, lihat denah sederhana
 
-## Fitur Utama
-*   **Manajemen Pelanggan**: Registrasi, login, lihat profil, dan pengelolaan saldo.
-*   **Manajemen KTP**: Pengisian dan pengelolaan data KTP yang terintegrasi dengan pelanggan.
-*   **Manajemen Parkir**: Sistem untuk masuk dan keluar parkir, perhitungan biaya, dan riwayat parkir.
-*   **Manajemen Vendor**: Penambahan, penghapusan, dan pembaruan data vendor serta produk mereka.
-*   **Sistem Belanja**: Pelanggan dapat menjelajahi dan membeli produk dari berbagai vendor.
-*   **Antrian Pesanan Prioritas**: Pesanan pelanggan diproses berdasarkan tingkat loyalitas mereka.
-*   **Riwayat Transaksi**: Admin dapat melihat riwayat transaksi dan melakukan `undo` transaksi terakhir.
-*   **Program Populasi Data**: Sebuah script terpisah untuk mengisi data awal secara otomatis.
+## Struktur Data pada Modul Vendor
 
-## Struktur Data yang Digunakan
+### Doubly Linked List
+Struktur data **Doubly Linked List** digunakan secara ekstensif untuk mengelola koleksi data yang dinamis.
+1.  **Daftar Produk (`daftarProduk`)**:
+    -   Setiap objek `Vendor` memiliki atribut `daftarProduk` yang bertipe `DoublyLinkedList<Produk>`.
+    -   **Penjelasan**: Struktur ini dipilih karena memungkinkan vendor untuk memiliki jumlah produk yang dinamis (bertambah/berkurang) tanpa batasan ukuran tetap seperti array. Linked list juga efisien untuk operasi penyisipan data baru.
+2.  **Pemrosesan String (Tokenizing)**:
+    -   Dalam fungsi `deserialisasi` (baik di kelas `Produk` maupun `Vendor`), `DoublyLinkedList<string>` digunakan sebagai wadah sementara untuk menyimpan token string hasil pemisahan data (parsing) dari format file teks sebelum dikonversi menjadi objek.
 
-Berikut adalah daftar struktur data kunci yang diimplementasikan dan bagaimana penggunaannya dalam proyek ini secara konkret dan detail:
+### AVL Tree
+Struktur data **AVL Tree** digunakan untuk optimasi pencarian dan pengurutan.
+1.  **Pencarian dan Sorting Produk (`pohonProduk` di `main.cpp`)**:
+    -   **Penjelasan**: AVL Tree digunakan secara global untuk mengindeks semua produk dari berbagai vendor dengan harga sebagai *key*. Ini memungkinkan fitur "Jelajahi Semua Produk" untuk menampilkan produk secara terurut berdasarkan harga (ascending) dan memfasilitasi pencarian produk yang efisien.
 
-### 1. Doubly Linked List (DoublyLinkedList.hpp)
-*   **Penggunaan**:
-    *   **Penyimpanan Koleksi Umum**: Digunakan secara luas untuk menyimpan koleksi objek dinamis yang urutannya penting atau membutuhkan penyisipan/penghapusan cepat di mana saja.
-    *   **`ManajerPelanggan::daftarPelanggan`**: Menyimpan semua objek `Pelanggan` yang terdaftar. Memungkinkan iterasi mudah untuk pencarian, pembaruan, dan penampilan semua pelanggan.
-    *   **`Vendor::daftarProduk`**: Setiap objek `Vendor` memiliki `DoublyLinkedList<Produk>` untuk menyimpan daftar produk yang dijual oleh vendor tersebut. Ini memfasilitasi manajemen inventaris produk per vendor.
-    *   **`AVLTree::valueList`**: Dalam implementasi `AVLTree`, jika ada beberapa node yang memiliki `key` yang sama (misalnya, beberapa produk dengan harga yang sama), semua objek `value` tersebut disimpan dalam `DoublyLinkedList<T>` di dalam `AVLNode` yang sama. Ini mengatasi tabrakan `key` dengan menyimpan semua nilai terkait.
-    *   **`AVLTree::getInOrderList()`**: Fungsi ini mengembalikan semua elemen dalam `AVLTree` sebagai `DoublyLinkedList<T>` yang terurut secara inorder, yang sangat berguna untuk menampilkan atau memproses semua elemen secara berurutan.
-    *   **`main.cpp` (Menu Navigasi)**: Digunakan untuk membuat daftar item menu yang ditampilkan di konsol, seperti `menuItems` di `menuKlien` atau `menuAdmin`, memungkinkan penambahan item menu secara dinamis.
-    *   **`PenyimpanFile::pisah()`**: Fungsi utilitas ini mengembalikan `DoublyLinkedList<string>` hasil pemisahan string berdasarkan delimiter, sangat penting untuk deserialisasi data dari file.
-    *   **`Customer::deserialisasi()`**: Saat memuat data pelanggan dari file, string data dipecah menjadi token-token menggunakan `DoublyLinkedList<string>` sebelum dikonversi kembali menjadi objek `Pelanggan`.
+### Huffman Coding
+Struktur data **Huffman Coding** digunakan untuk efisiensi penyimpanan data (Kompresi).
+1.  **Kompresi Database Vendor**:
+    -   **Penjelasan**: Algoritma Huffman digunakan untuk memampatkan (compress) data string vendor sebelum disimpan ke dalam file penyimpanan. Dengan memetakan karakter yang sering muncul ke kode biner yang lebih pendek, ukuran file database dapat diminimalkan, yang mempercepat operasi I/O (Input/Output) file.
 
-### 2. AVL Tree (AVLTree.hpp)
-*   **Penggunaan**:
-    *   **`KTPManager::pohonKTP`**: Sebuah `AVLTree<KTP>` digunakan untuk menyimpan semua data KTP. `key` untuk AVL tree ini dihasilkan dari NIK (Nomor Induk Kependudukan). Struktur ini memastikan:
-        *   **Pencarian Cepat**: KTP dapat dicari berdasarkan NIK dengan kompleksitas waktu O(log N), krusial untuk memverifikasi atau mengambil data KTP dengan cepat.
-        *   **Keseimbangan Otomatis**: Tree tetap seimbang sendiri, mencegah degenerasi menjadi list linier dan menjaga performa pencarian yang optimal bahkan dengan banyak data.
-    *   **`main.cpp::pohonProduk`**: Sebuah `AVLTree<Produk>` global digunakan untuk menyimpan semua produk dari semua vendor, dengan harga produk (`double`) sebagai `key`. Ini memungkinkan:
-        *   **Penjelajahan Produk Berdasarkan Harga**: Memungkinkan pengguna untuk melihat produk dalam urutan harga atau mencari produk dalam rentang harga tertentu secara efisien.
-        *   **Skalabilitas**: Mengelola daftar produk yang besar tanpa penurunan performa yang signifikan.
+## Struktur Data pada Modul Customer & Transaksi
 
-### 3. Priority Queue (DataStructures.hpp, digunakan sebagai `PriorityQueuePesanan`)
-*   **Penggunaan**:
-    *   **`main.cpp::antrianPesanan`**: Implementasi priority queue digunakan untuk mengelola pesanan pelanggan. Setiap pesanan memiliki tingkat prioritas, yang ditentukan berdasarkan level loyalitas pelanggan (misalnya, pelanggan level "Gold" memiliki prioritas lebih tinggi).
-        *   **Pemrosesan Terurut**: Pesanan dengan prioritas tertinggi akan selalu diproses terlebih dahulu, memastikan bahwa pelanggan VIP menerima layanan yang lebih cepat.
-        *   **Alokasi Sumber Daya**: Membantu admin dalam mengelola dan memproses pesanan secara efektif berdasarkan urgensi atau nilai pelanggan.
+### Doubly Linked List
+Digunakan sebagai wadah penyimpanan data dinamis yang fleksibel.
+1.  **Daftar Pelanggan**: Menyimpan seluruh objek pelanggan yang terdaftar.
+2.  **Menu Navigasi**: Menyimpan item-item menu string pada antarmuka pengguna (`menuItems`), memungkinkan navigasi menu yang dinamis.
 
-### 4. Stack (DataStructures.hpp, digunakan sebagai `StackRiwayat`)
-*   **Penggunaan**:
-    *   **`main.cpp::riwayatTransaksiAdmin`**: Admin menggunakan stack untuk menyimpan riwayat transaksi pembelian yang telah berhasil diproses.
-        *   **Fungsi Undo**: Memungkinkan admin untuk membatalkan (undo) transaksi terakhir yang dilakukan, dengan mudah mengembalikan perubahan saldo pelanggan dan stok produk. Ini mengikuti prinsip LIFO (Last-In, First-Out).
-    *   **`Customer::riwayatBelanja`**: Setiap objek `Pelanggan` memiliki stack pribadi untuk menyimpan riwayat belanja mereka sendiri.
-        *   **Pelacakan Sejarah Pembelian**: Memungkinkan pelanggan untuk melihat daftar pembelian terakhir mereka, juga mengikuti prinsip LIFO.
+### Stack (Tumpukan)
+Menggunakan prinsip LIFO (*Last In, First Out*) untuk manajemen riwayat.
+1.  **Riwayat Transaksi Admin (`riwayatTransaksiAdmin`)**:
+    -   **Fungsi**: Menyimpan jejak transaksi yang baru saja diproses.
+    -   **Fitur**: Memungkinkan fitur **Undo (Batalkan)**. Admin dapat membatalkan transaksi terakhir (misal: salah input), mengembalikan saldo pelanggan, dan stok produk secara otomatis.
 
-### 5. Binary Search Tree (BSTLoyalitasPelanggan, diimplementasikan dalam CustomerManager.h)
-*   **Penggunaan**:
-    *   **`ManajerPelanggan::bstLoyalitas`**: Digunakan untuk menyimpan dan mengelola poin loyalitas setiap pelanggan. ID pelanggan berfungsi sebagai `key`.
-        *   **Pencarian Cepat Poin Loyalitas**: Memungkinkan sistem untuk dengan cepat mencari poin loyalitas pelanggan dan menentukan level loyalitas mereka (misalnya, "Bronze", "Silver", "Gold").
-        *   **Pembaruan Efisien**: Penambahan atau pengurangan poin loyalitas dapat dilakukan dengan efisien, menjaga struktur terurut untuk akses cepat.
+### Priority Queue (Antrian Berprioritas)
+Menggunakan prinsip antrian di mana elemen dengan prioritas tertinggi diproses lebih dulu.
+1.  **Antrian Pesanan (`antrianPesanan`)**:
+    -   **Fungsi**: Menampung pesanan yang masuk dari pelanggan sebelum diproses oleh admin.
+    -   **Logika**: Pesanan tidak diproses berdasarkan urutan kedatangan (FIFO murni), melainkan berdasarkan **Level Loyalitas Pelanggan** (Gold, Silver, Bronze). Pelanggan dengan status loyalitas lebih tinggi (Gold) akan ditempatkan di depan antrian untuk diproses lebih cepat.
 
-## Persyaratan Sistem
-*   Sistem Operasi: Windows, macOS, atau Linux
-*   Compiler C++: Mendukung standar C++17 (misalnya, GCC, Clang, MSVC)
-*   RAM: Minimal 512 MB
-*   Penyimpanan: Minimal 100 MB ruang kosong
+### AVL Tree (Adelson-Velsky and Landis Tree)
+Pohon pencarian biner yang menyeimbangkan diri sendiri (self-balancing) untuk performa pencarian O(log n).
+1.  **Manajemen Data KTP (`KTPManager`)**:
+    -   **Fungsi**: Mengindeks data KTP pelanggan.
+    -   **Penjelasan**: Digunakan untuk menyimpan data KTP sehingga pencarian berdasarkan NIK atau Nama dapat dilakukan dengan sangat cepat, bahkan jika jumlah data penduduk/pelanggan sangat besar. Ini mencegah kelambatan yang terjadi jika menggunakan pencarian linear biasa.
 
-## Cara Kompilasi dan Menjalankan Program
+## Struktur Data pada Modul Parkir
 
-Untuk mengkompilasi dan menjalankan program utama:
+### Stack (Tumpukan)
+Digunakan untuk manajemen riwayat parkir.
+1.  **Riwayat Kendaraan Keluar**:
+    -   **Fungsi**: Menyimpan data tiket dari kendaraan yang baru saja melakukan *checkout*.
+    -   **Penjelasan**: Memudahkan admin untuk memantau arus keluar kendaraan terakhir (LIFO - *Last In First Out*).
 
-1.  **Buka Terminal/Command Prompt** di direktori root proyek.
-2.  **Kompilasi**: Gunakan perintah berikut:
-    ```bash
-    g++ -std=c++17 -O0 -I . main.cpp -o exe/main.exe
-    ```
-    *   `-std=c++17`: Menggunakan standar C++17.
-    *   `-O0`: Tidak ada optimasi (untuk debugging lebih mudah).
-    *   `-I .`: Menambahkan direktori saat ini sebagai direktori include untuk header.
-    *   `main.cpp`: File sumber utama.
-    *   `-o exe/main.exe`: Menghasilkan executable bernama `main.exe` di folder `exe`.
+### Queue (Antrian)
+Digunakan untuk manajemen arus masuk.
+1.  **Antrian Kendaraan Masuk**:
+    -   **Fungsi**: Menampung kendaraan yang akan masuk ke area parkir.
+    -   **Penjelasan**: Menggunakan prinsip FIFO (*First In, First Out*) agar kendaraan dilayani sesuai urutan kedatangan.
 
-3.  **Jalankan**: Setelah kompilasi berhasil, jalankan executable:
-    ```bash
-    ./exe/main.exe
-    ```
-
-## Panduan Penggunaan
-
-*   **Login/Registrasi**: Pada awal program, Anda akan diminta untuk login atau mendaftar sebagai pelanggan baru. Admin dapat login dengan ID `admin` dan password `admin123`.
-*   **Menu Klien**: Pelanggan dapat mengelola parkir, membeli produk dari vendor, melihat data KTP, dan melihat riwayat belanja.
-*   **Menu Admin**: Admin memiliki akses untuk mengelola pelanggan, vendor, KTP, memproses pesanan, melihat antrian pesanan, dan melakukan `undo` transaksi.
-
-## Populasi Data Awal
-
-Untuk mengisi database dengan data awal (pelanggan dan KTP) secara otomatis:
-
-1.  **Buka Terminal/Command Prompt** di direktori root proyek.
-2.  **Kompilasi script populasi data**:
-    ```bash
-    g++ -std=c++17 -O0 -I . populate_data.cpp -o exe/populate_data.exe
-    ```
-3.  **Jalankan script populasi data**:
-    ```bash
-    ./exe/populate_data.exe
-    ```
-    Script ini akan membuat atau memperbarui file `pelanggan.db` dan `ktp_data.db` dengan 20 entri pelanggan dan KTP yang saling terkait. Ini sangat berguna untuk pengujian dan demonstrasi.
+### Binary Search Tree (BST)
+Digunakan untuk pencarian cepat data parkir aktif.
+1.  **Indeks Nomor Polisi**:
+    -   **Fungsi**: Menyimpan referensi tiket parkir yang masih aktif (kendaraan di dalam) diurutkan berdasarkan Nomor Polisi.
+    -   **Penjelasan**: Memungkinkan fitur "Cari Kendaraan" atau "Cek Status Parkir" bekerja dengan efisien (O(log n)) tanpa harus memindai seluruh slot parkir satu per satu.
