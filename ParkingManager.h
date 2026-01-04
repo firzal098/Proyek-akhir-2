@@ -138,18 +138,16 @@ double hitungBiaya(const TiketParkir& tiket) {
 }
 
 
-
 void checkoutTiket(const string& idTiket) {
-        
     TiketParkir tiket = sistemParkir.checkOut(idTiket);
+
+    // Hitung poin: setiap 1000 biaya = 1 poin
+    int poin = static_cast<int>(tiket.biaya / 1000);
+
     historyKeluar.push(tiket);
-    databasePoin.tambahAtauUpdate(tiket.nomorPolisi, 10);
+    databasePoin.tambahAtauUpdate(tiket.nomorPolisi, poin); // update BST dengan poin sesuai biaya
     simpanPoinLoyalitas();
-    
 }
-
-
-
 
     // --- MENU UTAMA ---
     void tampilkanMenu(Pelanggan* pelanggan, ManajerPelanggan& manajerPelanggan) {
@@ -252,7 +250,8 @@ void checkoutTiket(const string& idTiket) {
                     break;
                 case 5: { // Cek BST
                     string plat;
-                    cout << "--- Cek Poin Loyalitas (BST) ---" << endl;
+                    databasePoin.tampilkanTop5();
+                    cout << "\n--- Cek Poin Loyalitas (BST) ---" << endl;
                     cout << "Masukkan Plat Nomor: "; getline(cin, plat);
                     databasePoin.cariPoin(plat);
                     getch();

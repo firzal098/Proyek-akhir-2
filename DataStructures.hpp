@@ -147,6 +147,11 @@ struct NodeBST {
     NodeBST* right;
 };
 
+struct TopPlat {
+    string plat;
+    int poin;
+};
+
 class BSTLoyalitas {
 private:
     NodeBST* root;
@@ -198,14 +203,66 @@ public:
         root = insertRec(root, plat, poin);
     }
 
-    void cariPoin(string plat) {
-        NodeBST* hasil = searchRec(root, plat);
-        if (hasil) {
-            cout << "Kendaraan " << plat << " memiliki " << hasil->poin << " poin loyalitas.\n";
-        } else {
-            cout << "Data loyalitas tidak ditemukan untuk " << plat << ".\n";
+    // Fungsi rekursif untuk traversal dan update top 5
+void traverseTop5(NodeBST* node, TopPlat top5[5]) {
+    if (!node) return;
+
+    // Traversal kanan dulu supaya urut descending
+    traverseTop5(node->right, top5);
+
+    // Masukkan node saat ini ke top5 jika poin lebih tinggi
+    for (int i = 0; i < 5; ++i) {
+        if (top5[i].poin < node->poin) {
+            // Geser elemen ke bawah untuk sisip
+            for (int j = 4; j > i; --j) {
+                top5[j] = top5[j - 1];
+            }
+            top5[i].plat = node->platNomor;
+            top5[i].poin = node->poin;
+            break;
         }
     }
+
+    traverseTop5(node->left, top5);
+}
+
+// Fungsi publik untuk tampilkan top 5
+void tampilkanTop5() {
+    TopPlat top5[5]; // default poin=0
+    for (int i = 0; i < 5; ++i) top5[i].poin = 0;
+
+    traverseTop5(root, top5);
+
+    cout << "\n--- 5 Kendaraan Teratas (Poin Loyalitas) ---\n";
+    for (int i = 0; i < 5; ++i) {
+        if (top5[i].poin == 0) break; // stop jika slot kosong
+        string level = hitungLevel(top5[i].poin);
+        cout << i + 1 << ". Plat: " << top5[i].plat
+             << " | Poin: " << top5[i].poin
+             << " | Level: " << level << endl;
+    }
+}
+
+    void cariPoin(string plat) {
+    NodeBST* hasil = searchRec(root, plat);
+    if (hasil) {
+        string level = hitungLevel(hasil->poin);
+        cout << "Kendaraan " << plat << " memiliki " << hasil->poin 
+             << " poin loyalitas. Level: " << level << endl;
+    } else {
+        cout << "Data loyalitas tidak ditemukan untuk " << plat << ".\n";
+    }
+}
+
+
+    string hitungLevel(int poin) {
+    if (poin >= 500) return "Platinum Member";
+    else if (poin >= 300) return "Diamond Member";
+    else if (poin >= 150) return "Gold Member";
+    else if (poin >= 70) return "Silver Member";
+    else if (poin >= 0) return "Bronze Member";
+    else return "eror system";
+}
 
     void simpanKeFile(string namaFile) {
         ofstream file(namaFile);
