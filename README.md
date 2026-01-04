@@ -1,9 +1,21 @@
-Simple Web Interface
+# Mall Digital
 
-Fitur yang didukung:
-- Register / Login (admin: `admin` / `admin123`)
-- Admin: lihat pelanggan, beri saldo, tambah vendor, tambah produk
-- Pelanggan: lihat profil & saldo, beli produk, check-in/check-out parkir, lihat denah sederhana
+**Deskripsi Proyek**
+Proyek ini merupakan simulasi sistem manajemen mall digital yang terintegrasi, mencakup pengelolaan pelanggan, vendor, produk, dan sistem parkir. Sistem ini mengimplementasikan berbagai struktur data canggih untuk memastikan efisiensi dan kinerja yang optimal dalam menangani data transaksi dan pengguna.
+
+## Akun Pengguna
+Berikut adalah informasi akun yang dapat digunakan untuk login ke dalam sistem:
+
+- **Admin** (Akses penuh ke semua fitur manajemen):
+  - **ID**: `admin`
+  - **Password**: `admin123`
+- **Pelanggan**:
+  - Berikut adalah 5 akun sampel dari `pelanggan.db` untuk keperluan uji coba:
+    1. **ID**: `CUST36371` | **Password**: `pass2801`
+    2. **ID**: `CUST38624` | **Password**: `pass8203`
+    3. **ID**: `CUST35991` | **Password**: `pass7334`
+    4. **ID**: `CUST65780` | **Password**: `pass2759`
+    5. **ID**: `CUST81250` | **Password**: `pass6781`
 
 ## Struktur Data pada Modul Vendor
 
@@ -51,6 +63,12 @@ Pohon pencarian biner yang menyeimbangkan diri sendiri (self-balancing) untuk pe
     -   **Penjelasan**: Digunakan untuk menyimpan data KTP sehingga pencarian berdasarkan NIK atau Nama dapat dilakukan dengan sangat cepat, bahkan jika jumlah data penduduk/pelanggan sangat besar. Ini mencegah kelambatan yang terjadi jika menggunakan pencarian linear biasa.
 
 ## Struktur Data pada Modul Parkir
+
+### Doubly Linked List
+Digunakan untuk manajemen data tiket secara dinamis.
+1.  **Daftar Tiket Parkir**:
+    -   **Fungsi**: Menyimpan koleksi utama seluruh tiket parkir.
+    -   **Penjelasan**: Struktur ini dipilih untuk menangani jumlah kendaraan yang dinamis di dalam area parkir, memungkinkan penyisipan dan penghapusan data tiket di posisi manapun dengan efisien.
 
 ### Stack (Tumpukan)
 Digunakan untuk manajemen riwayat parkir.
