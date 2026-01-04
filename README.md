@@ -3,6 +3,10 @@
 **Deskripsi Proyek**
 Proyek ini merupakan simulasi sistem manajemen mall digital yang terintegrasi, mencakup pengelolaan pelanggan, vendor, produk, dan sistem parkir. Sistem ini mengimplementasikan berbagai struktur data canggih untuk memastikan efisiensi dan kinerja yang optimal dalam menangani data transaksi dan pengguna.
 
+## Cara Run Program
+Cara 1 - Compile main.cpp
+Cara 2 - Buka main.exe di folder exe
+
 ## Akun Pengguna
 Berikut adalah informasi akun yang dapat digunakan untuk login ke dalam sistem:
 
