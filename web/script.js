@@ -56,6 +56,8 @@ document.getElementById('registerForm').addEventListener('submit', async (e)=>{
 });
 
 el('logoutBtn').addEventListener('click', ()=>{ clearUserStorage(); renderApp(); });
+const headerLogoutBtn = document.getElementById('headerLogoutBtn');
+if (headerLogoutBtn) headerLogoutBtn.addEventListener('click', ()=>{ clearUserStorage(); renderApp(); });
 
 // --- Admin actions ---
 async function loadCustomers(){
@@ -203,8 +205,9 @@ async function updateCustomerInfo(){
 // --- Render app based on role ---
 async function renderApp(){
     const user = loadUserFromStorage();
-    if (!user){ show('authSection'); hide('adminPanel'); hide('customerPanel'); return; }
+    if (!user){ show('authSection'); hide('adminPanel'); hide('customerPanel'); hide('headerLogoutBtn'); return; }
     hide('authSection');
+    show('headerLogoutBtn');
     if (user.role === 'admin'){
         show('adminPanel'); hide('customerPanel');
         await loadCustomers(); await loadVendorsForAdmin();
