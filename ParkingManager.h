@@ -128,19 +128,27 @@ public:
         return nullptr;
     }
 
-    double hitungBiaya(const TiketParkir& tiket) {
-        long durasiJam = (time(nullptr) - tiket.waktuMasuk) / 3600;
-        if (durasiJam < 1) durasiJam = 1;
-        return durasiJam * 5000; // 5.000 per jam
-    }
+double hitungBiaya(const TiketParkir& tiket) {
+    long durasiJam = (time(nullptr) - tiket.waktuMasuk) / 3600;
+    if (durasiJam < 1) durasiJam = 1;
+    return durasiJam * 5000; // 5.000 per jam
+}
 
-    void checkoutTiket(const string& idTiket) {
-        TiketParkir tiket = sistemParkir.checkOut(idTiket);
-        historyKeluar.push(tiket);
-        databasePoin.tambahAtauUpdate(tiket.nomorPolisi, 10);
-        simpanPoinLoyalitas();
-    }
 
+
+void checkoutTiket(const string& idTiket) {
+        
+    TiketParkir tiket = sistemParkir.checkOut(idTiket);
+    historyKeluar.push(tiket);
+    databasePoin.tambahAtauUpdate(tiket.nomorPolisi, 10);
+    simpanPoinLoyalitas();
+    
+}
+
+
+
+
+    // --- MENU UTAMA ---
     void tampilkanMenu(Pelanggan* pelanggan, ManajerPelanggan& manajerPelanggan) {
         while (true) {
             Tampilan::printHeader("Manajemen Parkir");
@@ -224,9 +232,10 @@ public:
                     sistemParkir.tampilkanTiketAktif();
                     Tampilan::pause();
                     break;
-                case 5: {
-                    Tampilan::printHeader("Cek Poin Loyalitas");
-                    string plat = Tampilan::getString("Masukkan Plat Nomor");
+                case 5: { // Cek BST
+                    string plat;
+                    cout << "--- Cek Poin Loyalitas (BST) ---" << endl;
+                    cout << "Masukkan Plat Nomor: "; getline(cin, plat);
                     databasePoin.cariPoin(plat);
                     Tampilan::pause();
                     break;
