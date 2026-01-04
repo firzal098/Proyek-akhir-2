@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Parkir & Vendor</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>MALL DIGITAL</h1>
+        
+        </header>
+
+        <section id="authSection" class="card">
+            <h2>Login / Register</h2>
+            <div class="row">
+                <form id="loginForm" class="col">
+                    <h3>Login</h3>
+                    <input id="loginId" placeholder="ID (atau admin)" required>
+                    <input id="loginPassword" type="password" placeholder="Password" required>
+                    <button type="submit" class="btn-primary">Login</button>
+                </form>
+
+                <form id="registerForm" class="col">
+                    <h3>Register</h3>
+                    <input id="regId" placeholder="ID pengguna" required>
+                    <input id="regNama" placeholder="Nama" required>
+                    <input id="regTelp" placeholder="No. Telepon">
+                    <input id="regEmail" placeholder="Email">
+                    <input id="regPassword" type="password" placeholder="Password" required>
+                    <button type="submit" class="btn-success">Register</button>
+                </form>
+            </div>
+        </section>
+
+        <section id="adminPanel" class="card hidden">
+            <h2>Panel Admin</h2>
+            <div>
+                <h3>Semua Pelanggan</h3>
+                <div id="customersList"></div>
+                <h4>Beri Saldo</h4>
+                <form id="giveBalanceForm">
+                    <input id="gbCustomerId" placeholder="Customer ID" required>
+                    <input id="gbAmount" type="number" placeholder="Jumlah" required>
+                    <button class="btn-primary">Beri Saldo</button>
+                </form>
+            </div>
+            <hr>
+            <div>
+                <h3>Manajemen Vendor</h3>
+                <form id="formVendor">
+                    <input id="namaVendor" placeholder="Nama Vendor" required>
+                    <input id="produkUtama" placeholder="Produk Utama">
+                    <input id="kategori" placeholder="Kategori">
+                    <button class="btn-primary">Tambah Vendor</button>
+                </form>
+                <div id="vendorListAdmin"></div>
+            </div>
+        </section>
+
+        <section id="customerPanel" class="card hidden">
+            <div class="row between">
+                <div>
+                    <h2 id="custName">Nama</h2>
+                    <p>ID: <span id="custId"></span></p>
+                    <p>Saldo: Rp <span id="custSaldo">0</span></p>
+                </div>
+                <div>
+                    <button id="logoutBtn" class="btn-danger">Logout</button>
+                </div>
+            </div>
+
+            <div class="grid">
+                <div class="card small">
+                    <h3>Parkir</h3>
+                    <div id="mapArea"></div>
+                    <form id="checkinForm">
+                        <input id="checkinSlot" placeholder="Slot (A1..E5)" required>
+                        <input id="checkinPlat" placeholder="Plat Nomor" required>
+                        <button class="btn-primary">Check-In</button>
+                    </form>
+                    <h4>Check-Out</h4>
+                    <form id="checkoutForm">
+                        <input id="checkoutTiket" placeholder="ID Tiket" required>
+                        <button class="btn-success">Check-Out</button>
+                    </form>
+                    <div id="activeTickets"></div>
+                </div>
+
+                <div class="card small">
+                    <h3>Toko & Vendor</h3>
+                    <div id="vendorListCustomer"></div>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <p>&copy; Sistem Parkir & Vendor — versi web sederhana</p>
+        </footer>
+    </div>
+
+    <!-- Modal Tambah Produk untuk Admin -->
+    <div id="productModal" class="modal hidden">
+        <div class="modal-content">
+            <span id="closeModal" class="close">&times;</span>
+            <h2>Tambah Produk</h2>
+            <input type="hidden" id="currentVendorId">
+            <form id="formProduct">
+                <input id="namaProduk" placeholder="Nama Produk" required>
+                <input id="hargaProduk" type="number" placeholder="Harga Satuan (Rp)" required>
+                <input id="stokProduk" type="number" placeholder="Stok Awal" required>
+                <button class="btn-success">Simpan Produk</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

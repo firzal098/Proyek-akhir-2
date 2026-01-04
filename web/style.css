@@ -1,0 +1,67 @@
+:root{ --bg:#f5f6fa; --card:#fff; --accent:#2d8cf0; --success:#28a745; --danger:#dc3545; --muted:#666 }
+*{box-sizing:border-box;font-family:Segoe UI, Roboto, Arial, sans-serif}
+body{background:var(--bg);margin:0;padding:20px}
+.container{max-width:1000px;margin:0 auto}
+header{margin-bottom:18px}
+h1{margin:0;font-size:22px}
+.card{background:var(--card);padding:16px;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,0.06);margin-bottom:12px}
+.row{display:flex;gap:12px}
+.col{flex:1}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.small{padding:8px}
+input{display:block;padding:8px;margin:6px 0;border:1px solid #ddd;border-radius:4px;width:100%}
+button{padding:8px 10px;border:0;border-radius:6px;cursor:pointer}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-success{background:var(--success);color:#fff}
+.btn-danger{background:var(--danger);color:#fff}
+.small.btn-primary{padding:4px 6px;margin-left:6px}
+.hidden{display:none}
+.vendorCard{border:1px dashed #eee;padding:8px;margin:6px 0;border-radius:6px}
+.prodList{margin-top:6px;font-size:14px;color:var(--muted)}
+.item{padding:6px 0;border-bottom:1px solid #f0f0f0}
+footer{font-size:13px;color:var(--muted);text-align:center;margin-top:8px}
+
+/* Modal */
+.modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.4)}
+.modal-content{background:#fff;padding:16px;border-radius:8px;min-width:320px}
+.close{float:right;cursor:pointer}
+
+/* Parkir map */
+#mapArea{margin:8px 0}
+.mapRow{display:flex;gap:6px;margin-bottom:6px}
+.slot{padding:8px 10px;border-radius:6px;border:1px solid #ddd;width:56px;text-align:center}
+.slot.taken{background:#333;color:#fff}
+.slot.free{background:#e9f5ff;color:#000}
+
+.between{display:flex;justify-content:space-between;align-items:center}
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; color: #333; }
+.container { max-width: 900px; margin: 0 auto; }
+header { text-align: center; margin-bottom: 30px; }
+h1 { margin-bottom: 5px; color: #2c3e50; }
+
+.card { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+.form-section { border-left: 5px solid #3498db; }
+
+input { width: 100%; padding: 10px; margin: 8px 0; display: inline-block; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+
+button { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; transition: background 0.3s; }
+.btn-primary { background-color: #3498db; color: white; }
+.btn-primary:hover { background-color: #2980b9; }
+.btn-success { background-color: #27ae60; color: white; width: 100%; }
+.btn-success:hover { background-color: #219150; }
+.btn-add-prod { background-color: #e67e22; color: white; margin-top: 10px; }
+
+.vendor-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px; }
+.vendor-header h3 { margin: 0; }
+.badge { background: #95a5a6; color: white; padding: 3px 8px; border-radius: 12px; font-size: 0.8em; }
+
+.product-list { background: #f9f9f9; padding: 10px; border-radius: 4px; }
+.product-list ul { list-style-type: none; padding: 0; margin: 0; }
+.product-list li { padding: 5px 0; border-bottom: 1px dashed #ddd; display: flex; justify-content: space-between; }
+.product-list li:last-child { border-bottom: none; }
+
+/* Modal Styles */
+.modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
+.modal-content { background-color: #fefefe; margin: 10% auto; padding: 25px; border: 1px solid #888; width: 90%; max-width: 400px; border-radius: 8px; }
+.close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+.close:hover { color: black; }
