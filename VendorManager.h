@@ -7,9 +7,9 @@
 #include <algorithm>
 #include <limits>
 #include <sstream>
-#include <conio.h> 
 #include "DoublyLinkedList.hpp"
 #include "PenyimpanFile.hpp"
+#include "Tampilan.hpp"
 
 
 using namespace std;
@@ -20,50 +20,59 @@ private:
     string namaFile = "vendors.db";
 
     void tambahVendor() {
+        Tampilan::printHeader("Tambah Vendor");
+        
+        cout << Tampilan::BOLD << Tampilan::YELLOW << "-> ID Vendor (Angka): " << Tampilan::RESET;
         int id;
-        string nama, produk, kat;
+        cin >> id;
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
         
-        cout << "\n--- Tambah Vendor ---\n";
-        cout << "ID Vendor (Angka): "; cin >> id; cin.ignore();
-        
-        // Cek duplicate ID
         for (auto& v : daftarVendor) {
             if (v.getId() == id) {
-                cout << "Error: ID Vendor sudah digunakan!\n";
-                getch();
+                Tampilan::printError("ID Vendor sudah digunakan!");
+                Tampilan::pause();
                 return;
             }
         }
 
-        cout << "Nama Vendor : "; getline(cin, nama);
-        cout << "Produk Utama: "; getline(cin, produk);
-        cout << "Kategori    : "; getline(cin, kat);
+        string nama = Tampilan::getString("Nama Vendor");
+        string produk = Tampilan::getString("Produk Utama");
+        string kat = Tampilan::getString("Kategori");
 
         daftarVendor.push_back(Vendor(id, nama, produk, kat));
         simpan();
-        cout << "Vendor berhasil disimpan!\n";
-        getch();
+        Tampilan::printMessage("Vendor berhasil disimpan!", Tampilan::GREEN);
+        Tampilan::pause();
     }
 
     void cariVendor() {
-        string key;
-        cout << "Masukkan kata kunci (Nama/Kategori): "; getline(cin, key);
+        Tampilan::printHeader("Cari Vendor");
+        string key = Tampilan::getString("Masukkan kata kunci (Nama/Kategori)");
         string lowerKey = keHurufKecil(key);
         
         bool found = false;
         for (auto& v : daftarVendor) {
             if (keHurufKecil(v.getNama()).find(lowerKey) != string::npos || 
                 keHurufKecil(v.getKategori()).find(lowerKey) != string::npos) {
+                if (!found) {
+                    cout << "\n--- Hasil Pencarian ---\n";
+                }
                 v.info();
                 found = true;
             }
         }
-        if (!found) cout << "Tidak ditemukan vendor dengan kata kunci tersebut.\n";
+        if (!found) {
+            Tampilan::printMessage("Tidak ditemukan vendor dengan kata kunci tersebut.");
+        }
     }
 
     void menuKelolaProduk() {
+        Tampilan::printHeader("Kelola Produk");
+        tampilkanSemua();
+        cout << Tampilan::BOLD << Tampilan::YELLOW << "-> Masukkan ID Vendor yang ingin dikelola: " << Tampilan::RESET;
         int id;
-        cout << "Masukkan ID Vendor yang ingin dikelola: "; cin >> id; cin.ignore();
+        cin >> id;
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
         Vendor* target = nullptr;
         for (auto it = daftarVendor.begin(); it != daftarVendor.end(); ++it) {
@@ -74,28 +83,30 @@ private:
         }
 
         if (!target) {
-            cout << "Vendor tidak ditemukan.\n";
-            getch();
+            Tampilan::printError("Vendor tidak ditemukan.");
+            Tampilan::pause();
             return;
         }
 
-        // Sub-menu for specific vendor
         int subPilih;
         do {
-            system("cls");
-            cout << "=== KELOLA PRODUK VENDOR: " << target->getNama() << " ===\n";
-            cout << "1. Tambah Produk\n";
-            cout << "2. Lihat Daftar Produk\n";
-            cout << "0. Kembali\n";
-            cout << "Pilihan: "; cin >> subPilih; cin.ignore();
+            Tampilan::printHeader("Kelola Produk: " + target->getNama());
+            DoublyLinkedList<string> menuItems;
+            menuItems.push_back("Tambah Produk");
+            menuItems.push_back("Lihat Daftar Produk");
+            menuItems.push_back("Kembali");
+            Tampilan::printMenu(menuItems);
+            subPilih = Tampilan::getChoice();
 
             if (subPilih == 1) {
                 target->tambahProduk();
-                simpan(); // Auto save updates
-                getch();
+                simpan(); 
+                Tampilan::printMessage("Produk berhasil ditambahkan.", Tampilan::GREEN);
+                Tampilan::pause();
             } else if (subPilih == 2) {
+                Tampilan::printHeader("Daftar Produk: " + target->getNama());
                 target->tampilkanProduk();
-                getch();
+                Tampilan::pause();
             }
         } while (subPilih != 0);
     }
@@ -114,9 +125,9 @@ public:
     }
 
     void tampilkanSemua() {
-        cout << "\n--- Daftar Vendor ---\n";
+        cout << "\n" << Tampilan::CYAN << "--- Daftar Vendor ---\n" << Tampilan::RESET;
         if (daftarVendor.empty()) {
-            cout << "Data kosong.\n";
+            Tampilan::printMessage("Data vendor kosong.");
             return;
         }
         for (auto& v : daftarVendor) {
@@ -127,22 +138,32 @@ public:
     void jalankan() {
         int pilih;
         do {
-            system("cls");
-            cout << "=== MENU VENDOR MANAGEMENT ===\n";
-            cout << "1. Tambah Vendor Baru\n";
-            cout << "2. Tampilkan Semua Vendor\n";
-            cout << "3. Cari Vendor (Nama/Kategori)\n";
-            cout << "4. Kelola Produk Vendor\n";
-            cout << "0. Kembali ke Menu Utama\n";
-            cout << "Pilihan: "; cin >> pilih; cin.ignore();
+            Tampilan::printHeader("Manajemen Vendor");
+            DoublyLinkedList<string> menuItems;
+            menuItems.push_back("Tambah Vendor Baru");
+            menuItems.push_back("Tampilkan Semua Vendor");
+            menuItems.push_back("Cari Vendor (Nama/Kategori)");
+            menuItems.push_back("Kelola Produk Vendor");
+            menuItems.push_back("Kembali ke Menu Utama");
+            Tampilan::printMenu(menuItems);
+            pilih = Tampilan::getChoice();
 
             switch (pilih) {
                 case 1: tambahVendor(); break;
-                case 2: tampilkanSemua(); getch(); break;
-                case 3: cariVendor(); getch(); break;
+                case 2: 
+                    Tampilan::printHeader("Semua Vendor");
+                    tampilkanSemua(); 
+                    Tampilan::pause(); 
+                    break;
+                case 3: 
+                    cariVendor(); 
+                    Tampilan::pause(); 
+                    break;
                 case 4: menuKelolaProduk(); break;
                 case 0: break;
-                default: cout << "Pilihan tidak valid.\n"; getch();
+                default: 
+                    Tampilan::printError("Pilihan tidak valid.");
+                    Tampilan::pause();
             }
         } while (pilih != 0);
     }

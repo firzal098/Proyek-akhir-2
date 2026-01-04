@@ -4,13 +4,13 @@
 #include <iostream>
 #include <string>
 #include <limits>
-#include <conio.h>
 #include <iomanip>
 #include <fstream> 
 #include "ParkingSystem.h"
 #include "PenyimpanFile.hpp" 
 #include "DoublyLinkedList.hpp"
-#include "DataStructures.hpp" // IMPORT STRUKTUR DATA BARU
+#include "DataStructures.hpp"
+#include "Tampilan.hpp" // <-- Include library Tampilan
 
 using namespace std;
 
@@ -22,11 +22,10 @@ class ManajerParkir {
 private:
     SistemParkir sistemParkir; 
     
-    // --- PENGGUNAAN STRUKTUR DATA DARI DataStructures.hpp ---
-    DoublyLinkedList<DoublyLinkedList<string>> petaSlot; // Denah
-    QueueParkir antrianMasuk;    // Queue (FIFO)
-    StackParkir historyKeluar;   // Stack (LIFO)
-    BSTLoyalitas databasePoin;   // BST
+    DoublyLinkedList<DoublyLinkedList<string>> petaSlot;
+    QueueParkir antrianMasuk;
+    StackParkir historyKeluar;
+    BSTLoyalitas databasePoin;
 
     const string fileLoyalitas = "poin_loyalitas.db";
 
@@ -43,7 +42,6 @@ private:
     }
 
     void muatPoinLoyalitas() {
-        // Load manual file baris per baris ke BST
         ifstream file(fileLoyalitas);
         string baris;
         while (getline(file, baris)) {
@@ -69,208 +67,185 @@ public:
     }
     
     void tampilkanPeta() {
-        cout << "\n================ DENAH PARKIR (5x5) ================\n";
-        cout << "Legenda: [ XX ] = Terisi, [ A1 ] = Kosong\n\n";
+        cout << Tampilan::BLUE << "\n================ DENAH PARKIR (5x5) ================\n" << Tampilan::RESET;
+        cout << Tampilan::DIM << "Legenda: [ XX ] = Terisi, [ A1 ] = Kosong\n\n" << Tampilan::RESET;
         for (auto itBaris = petaSlot.begin(); itBaris != petaSlot.end(); ++itBaris) {
             cout << "   ";
             for (auto itKolom = itBaris->begin(); itKolom != itBaris->end(); ++itKolom) {
                 string slot = *itKolom;
                 if (sistemParkir.apakahSlotTerisi(slot)) {
-                    cout << "[ XX ] ";
+                    cout << Tampilan::RED << "[ XX ] " << Tampilan::RESET;
                 } else {
-                    cout << "[ " << slot << " ] ";
+                    cout << Tampilan::GREEN << "[ " << slot << " ] " << Tampilan::RESET;
                 }
             }
             cout << endl;
         }
-        cout << "====================================================\n";
+        cout << Tampilan::BLUE << "====================================================\n" << Tampilan::RESET;
     }
 
-    // --- MENU 1: SUB-MENU ANTRIAN ---
     void menuAntrian() {
-        int pil;
         while (true) {
-            system("cls");
-            cout << "=== MENU ANTRIAN PARKIR ===\n";
-            cout << "1. Tambah Antrian Masuk Parkir (QUEUE)\n";
-            cout << "2. Tampilkan Antrian\n";
-            cout << "3. Tampilkan Kendaraan Aktif\n";
-            cout << "4. Keluar\n";
-            cout << "Pilihan: ";
-            cin >> pil; cin.ignore();
+            Tampilan::printHeader("Menu Antrian Parkir");
+            DoublyLinkedList<string> menuItems;
+            menuItems.push_back("Tambah Antrian Masuk Parkir (QUEUE)");
+            menuItems.push_back("Tampilkan Antrian");
+            menuItems.push_back("Tampilkan Kendaraan Aktif");
+            menuItems.push_back("Kembali");
+            Tampilan::printMenu(menuItems);
+            int pil = Tampilan::getChoice();
 
             if (pil == 1) {
-                string id, plat;
-                cout << "Masukkan ID Pelanggan: "; getline(cin, id);
-                cout << "Masukkan Plat Nomor: "; getline(cin, plat);
+                string id = Tampilan::getString("Masukkan ID Pelanggan");
+                string plat = Tampilan::getString("Masukkan Plat Nomor");
                 antrianMasuk.enqueue(id, plat);
-                getch();
+                Tampilan::printMessage("Kendaraan berhasil ditambahkan ke antrian.", Tampilan::GREEN);
+                Tampilan::pause();
             } else if (pil == 2) {
+                Tampilan::printHeader("Antrian Kendaraan");
                 antrianMasuk.tampilkan();
-                getch();
+                Tampilan::pause();
             } else if (pil == 3) {
+                Tampilan::printHeader("Kendaraan Parkir Aktif");
                 sistemParkir.tampilkanTiketAktif();
-                getch();
+                Tampilan::pause();
             } else if (pil == 4) {
                 break;
+            } else {
+                Tampilan::printError("Pilihan tidak valid.");
+                Tampilan::pause();
             }
         }
     }
 
-    // ===============================
-// FUNGSI PENDUKUNG CHECK-OUT
-// ===============================
-
-TiketParkir* cariTiket(const string& idTiket) {
-    auto& daftar = sistemParkir.getTiketAktif();
-    for (auto it = daftar.begin(); it != daftar.end(); ++it) {
-        if (it->idTiket == idTiket) {
-            return &(*it);
+    TiketParkir* cariTiket(const string& idTiket) {
+        auto& daftar = sistemParkir.getTiketAktif();
+        for (auto it = daftar.begin(); it != daftar.end(); ++it) {
+            if (it->idTiket == idTiket) {
+                return &(*it);
+            }
         }
+        return nullptr;
     }
-    return nullptr;
-}
 
-double hitungBiaya(const TiketParkir& tiket) {
-    long durasiJam = (time(nullptr) - tiket.waktuMasuk) / 3600;
-    if (durasiJam < 1) durasiJam = 1;
-    return durasiJam * 5000; // 5.000 per jam
-}
+    double hitungBiaya(const TiketParkir& tiket) {
+        long durasiJam = (time(nullptr) - tiket.waktuMasuk) / 3600;
+        if (durasiJam < 1) durasiJam = 1;
+        return durasiJam * 5000; // 5.000 per jam
+    }
 
+    void checkoutTiket(const string& idTiket) {
+        TiketParkir tiket = sistemParkir.checkOut(idTiket);
+        historyKeluar.push(tiket);
+        databasePoin.tambahAtauUpdate(tiket.nomorPolisi, 10);
+        simpanPoinLoyalitas();
+    }
 
-
-void checkoutTiket(const string& idTiket) {
-        
-    TiketParkir tiket = sistemParkir.checkOut(idTiket);
-    historyKeluar.push(tiket);
-    databasePoin.tambahAtauUpdate(tiket.nomorPolisi, 10);
-    simpanPoinLoyalitas();
-    
-}
-
-
-
-
-    // --- MENU UTAMA ---
     void tampilkanMenu(Pelanggan* pelanggan, ManajerPelanggan& manajerPelanggan) {
-        int pilihan;
         while (true) {
-            system("cls"); 
-            cout << "=== SISTEM MANAJEMEN PARKIR ===" << endl;
-            cout << "1. Ambil Antrian Parkir" << endl;
-            cout << "2. Masuk Parkir (Check-In)" << endl;
-            cout << "3. Keluar Parkir (Check-Out)" << endl;
-            cout << "4. Tampilkan Kendaraan Aktif" << endl;
-            cout << "5. Cek Poin Loyalitas (BST)" << endl;
-            cout << "6. Tampilkan Denah Parkir" << endl;
-            cout << "7. Lihat Kendaraan Terakhir Keluar" << endl;
-            cout << "8. Kembali" << endl;
-            cout << "Pilihan: ";
-            cin >> pilihan;
-            cin.ignore(); 
+            Tampilan::printHeader("Manajemen Parkir");
+            DoublyLinkedList<string> menuItems;
+            menuItems.push_back("Ambil Antrian Parkir");
+            menuItems.push_back("Masuk Parkir (Check-In)");
+            menuItems.push_back("Keluar Parkir (Check-Out)");
+            menuItems.push_back("Tampilkan Kendaraan Aktif");
+            menuItems.push_back("Cek Poin Loyalitas (BST)");
+            menuItems.push_back("Tampilkan Denah Parkir");
+            menuItems.push_back("Lihat Kendaraan Terakhir Keluar");
+            menuItems.push_back("Kembali");
+            Tampilan::printMenu(menuItems);
+            int pilihan = Tampilan::getChoice();
 
             switch (pilihan) {
                 case 1: 
                     menuAntrian();
                     break;
-
                 case 2: { // Check-In dari Queue
-                    cout << "\n--- Proses Check-In ---" << endl;
-                    
+                    Tampilan::printHeader("Proses Check-In");
                     if (antrianMasuk.isEmpty()) {
-                        cout << "Gagal: Tidak ada kendaraan yang mengantri.\n";
-                        cout << "Silakan ambil antrian terlebih dahulu (Menu 1).\n";
-                        getch();
+                        Tampilan::printError("Gagal: Tidak ada kendaraan yang mengantri.");
+                        Tampilan::printMessage("Silakan ambil antrian terlebih dahulu (Menu 1).");
+                        Tampilan::pause();
                         break;
                     }
 
-                    // Ambil data dari Queue
                     string idCust, plat;
                     antrianMasuk.dequeue(idCust, plat);
                     cout << "Memproses Antrian Terdepan:\n";
                     cout << "ID: " << idCust << " | Plat: " << plat << endl;
 
-                    // Pilih Slot
                     tampilkanPeta();
-                    string slot;
-                    cout << "Pilih Slot (misal A1): "; getline(cin, slot);
+                    string slot = Tampilan::getString("Pilih Slot (misal A1)");
 
-                    // Proses Checkin di Sistem
                     sistemParkir.checkIn(idCust, plat, slot);
-                    getch();
+                    Tampilan::printMessage("Check-in berhasil!", Tampilan::GREEN);
+                    Tampilan::pause();
                     break;
                 }
-
                 case 3: { // Checkout
-                    string idTiket;
-                    cout << "Masukkan ID Tiket: ";
-                    getline(cin, idTiket);                   
+                    if (!pelanggan) {
+                        Tampilan::printError("Checkout hanya bisa dilakukan oleh pelanggan yang login.");
+                        Tampilan::pause();
+                        break;
+                    }
+                    Tampilan::printHeader("Proses Check-Out");
+                    string idTiket = Tampilan::getString("Masukkan ID Tiket");
 
                     TiketParkir* tiket = cariTiket(idTiket);
                     if (!tiket) {
-                        cout << "Tiket tidak ditemukan!\n";
-                        getch();
+                        Tampilan::printError("Tiket tidak ditemukan!");
+                        Tampilan::pause();
                         break;
                     }
 
                     double biaya = hitungBiaya(*tiket);
-
                     cout << "\n--- INFORMASI PEMBAYARAN ---\n";
-                    cout << "Biaya Parkir : Rp" << biaya << endl;
-                    cout << "Saldo Anda   : Rp" << pelanggan->getSaldo() << endl;
+                    cout << "Biaya Parkir : " << Tampilan::YELLOW << "Rp" << biaya << Tampilan::RESET << endl;
+                    cout << "Saldo Anda   : " << Tampilan::GREEN << "Rp" << pelanggan->getSaldo() << Tampilan::RESET << endl;
 
-                    if (!pelanggan) {
-                        cout << "Checkout hanya bisa dilakukan oleh pelanggan.\n";
-                        getch();
-                    break;
-                    }
-
-                    // 🔴 VALIDASI SALDO
                     if (pelanggan->getSaldo() < biaya) {
-                        cout << "\n❌ Saldo tidak mencukupi!\n";
-                        cout << "Silakan isi saldo terlebih dahulu.\n";
-                        getch();
+                        Tampilan::printError("Saldo tidak mencukupi! Silakan isi saldo terlebih dahulu.");
+                        Tampilan::pause();
                         break;
                     }
 
-                    // 🟢 POTONG SALDO
                     pelanggan->setSaldo(pelanggan->getSaldo() - biaya);
                     manajerPelanggan.simpanData();
 
-                    // Proses checkout tiket
                     checkoutTiket(idTiket);
 
-                    cout << "\n✅ Checkout berhasil!\n";
+                    Tampilan::printMessage("Checkout berhasil!", Tampilan::GREEN);
                     cout << "Sisa saldo: Rp" << pelanggan->getSaldo() << endl;
-                    getch();
+                    Tampilan::pause();
                     break;
                 }
-
                 case 4: 
+                    Tampilan::printHeader("Kendaraan Parkir Aktif");
                     sistemParkir.tampilkanTiketAktif();
-                    getch();
+                    Tampilan::pause();
                     break;
-                case 5: { // Cek BST
-                    string plat;
-                    cout << "--- Cek Poin Loyalitas (BST) ---" << endl;
-                    cout << "Masukkan Plat Nomor: "; getline(cin, plat);
+                case 5: {
+                    Tampilan::printHeader("Cek Poin Loyalitas");
+                    string plat = Tampilan::getString("Masukkan Plat Nomor");
                     databasePoin.cariPoin(plat);
-                    getch();
+                    Tampilan::pause();
                     break;
                 }
                 case 6:
+                    Tampilan::printHeader("Denah Parkir");
                     tampilkanPeta();
-                    getch();
+                    Tampilan::pause();
                     break;
-                case 7: // Cek Stack
-                    sistemParkir.tampilkanRiwayat(); // fungsi baru di SistemParkir
-                    getch();
+                case 7:
+                    Tampilan::printHeader("Riwayat Parkir Terakhir");
+                    sistemParkir.tampilkanRiwayat();
+                    Tampilan::pause();
                     break;
                 case 8: 
                     return;
                 default:
-                    cout << "Pilihan tidak valid." << endl;
-                    getch();
+                    Tampilan::printError("Pilihan tidak valid.");
+                    Tampilan::pause();
                     break;
             }
         }

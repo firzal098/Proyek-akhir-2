@@ -5,7 +5,7 @@
 #include <iostream>
 #include <fstream>
 #include "PenyimpanFile.hpp" // Akan diganti namanya nanti
-
+#include "Tampilan.hpp"
 using namespace std;
 
 /**
@@ -68,13 +68,12 @@ public:
      * Informasi yang ditampilkan diformat agar mudah dibaca.
      */
     void tampilkanInfo() const {
-        cout << "----------------------------------------" << endl;
-        cout << "ID Pelanggan   : " << idPelanggan << endl;
-        cout << "Nama           : " << nama << endl;
-        cout << "No. Telepon    : " << nomorTelepon << endl;
-        cout << "Email          : " << email << endl;
-        cout << "Saldo          : Rp" << saldo << endl;
-        cout << "----------------------------------------" << endl;
+        cout << Tampilan::BLUE << "----------------------------------------" << Tampilan::RESET << endl;
+        cout << Tampilan::BOLD << "ID Pelanggan   : " << Tampilan::RESET << idPelanggan << endl;
+        cout << Tampilan::BOLD << "Nama           : " << Tampilan::RESET << nama << endl;
+        cout << Tampilan::BOLD << "No. Telepon    : " << Tampilan::RESET << nomorTelepon << endl;
+        cout << Tampilan::BOLD << "Email          : " << Tampilan::RESET << email << endl;
+        cout << Tampilan::BOLD << "Saldo          : " << Tampilan::GREEN << "Rp" << saldo << Tampilan::RESET << endl;
     }
 
     /**

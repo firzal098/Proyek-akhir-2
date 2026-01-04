@@ -28,7 +28,9 @@ public:
     Produk(string n = "", double h = 0.0, int s = 0) : nama(n), harga(h), stok(s) {}
 
     void tampilkan() const {
-        cout << "    - " << nama << " (Stok: " << stok << ") - Rp" << harga;
+        cout << "    - " << Tampilan::BOLD << nama << Tampilan::RESET 
+             << Tampilan::DIM << " (Stok: " << stok << ")" << Tampilan::RESET
+             << Tampilan::GREEN << " - Rp" << harga << Tampilan::RESET;
     }
 
     // Serialize: nama,harga,stok
@@ -68,9 +70,11 @@ public:
     double getTotal() const { return jumlah * hargaSatuan; }
 
     void tampilkan() const {
-        cout << "   [ID: " << idPenjualan << "] " << namaProduk 
-             << " | Qty: " << jumlah << " | @ Rp" << (long)hargaSatuan 
-             << " | Total: Rp" << (long)getTotal() << endl;
+        cout << "   " << Tampilan::DIM << "[ID: " << idPenjualan << "] " << Tampilan::RESET
+             << namaProduk 
+             << " | Qty: " << Tampilan::BOLD << jumlah << Tampilan::RESET 
+             << " | @ Rp" << (long)hargaSatuan 
+             << " | Total: " << Tampilan::GREEN << "Rp" << (long)getTotal() << Tampilan::RESET << endl;
     }
 
     // Serialize: id,nama,jumlah,harga
@@ -121,20 +125,24 @@ public:
         double harga;
         int stok;
 
-        cout << "   >> Tambah Produk Baru untuk Vendor " << nama << endl;
-        cout << "   Nama Produk: "; getline(cin, namaProduk);
-        cout << "   Harga Satuan: "; cin >> harga;
-        cout << "   Stok Awal: "; cin >> stok;
-        cin.ignore();
+        Tampilan::printMessage("Tambah Produk Baru untuk Vendor " + nama, Tampilan::CYAN);
+        namaProduk = Tampilan::getString("   Nama Produk");
+        
+        cout << Tampilan::BOLD << Tampilan::YELLOW << "   Harga Satuan: " << Tampilan::RESET;
+        cin >> harga;
+        
+        cout << Tampilan::BOLD << Tampilan::YELLOW << "   Stok Awal: " << Tampilan::RESET;
+        cin >> stok;
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
         daftarProduk.push_back(Produk(namaProduk, harga, stok));
-        cout << "   [OK] Produk berhasil ditambahkan!\n";
+        Tampilan::printMessage("   [OK] Produk berhasil ditambahkan!", Tampilan::GREEN);
     }
 
     void tampilkanProduk() const {
-        cout << "\n   --- Daftar Produk: " << nama << " ---\n";
+        cout << "\n" << Tampilan::CYAN << "   --- Daftar Produk: " << nama << " ---\n" << Tampilan::RESET;
         if (daftarProduk.empty()) {
-            cout << "   (Belum ada produk)\n";
+            Tampilan::printMessage("   (Belum ada produk)");
         } else {
             for (auto it = daftarProduk.begin(); it != daftarProduk.end(); ++it) {
                 it->tampilkan();
@@ -144,9 +152,10 @@ public:
     }
 
     void info() const {
-        cout << "ID: " << id << " | Vendor: " << nama 
-             << " | Kategori: " << kategori 
-             << " | Jml Produk: " << daftarProduk.size() << endl;
+        cout << Tampilan::BLUE << "ID: " << Tampilan::BOLD << id << Tampilan::RESET
+             << Tampilan::BLUE << " | Vendor: " << Tampilan::BOLD << nama << Tampilan::RESET
+             << Tampilan::BLUE << " | Kategori: " << Tampilan::BOLD << kategori << Tampilan::RESET
+             << Tampilan::BLUE << " | Jml Produk: " << Tampilan::BOLD << daftarProduk.size() << Tampilan::RESET << endl;
     }
 
     // --- SERIALIZATION FOR FILESTORE ---
