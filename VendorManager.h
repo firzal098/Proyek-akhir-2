@@ -117,21 +117,21 @@ private:
 
 public:
     ManajerVendor() {
-        // Try to load from compressed file first
-        ifstream compFile(compressedFileName);
-        if (compFile.is_open()) {
-            loadFromCompressedFile(compFile);
-            compFile.close();
-            return;
-        }
-
-        // If compressed file doesn't exist, try loading from uncompressed file
+        // Prefer loading from uncompressed file so the app uses the human-readable store
         ifstream uncompFile(uncompressedFileName);
         if (uncompFile.is_open()) {
             loadFromUncompressedFile(uncompFile);
             uncompFile.close();
-            // After loading from uncompressed, save to compressed file
+            // Keep compressed copy in sync for faster future loads or backup
             simpan();
+            return;
+        }
+
+        // Fallback: if uncompressed file not present, try loading compressed file
+        ifstream compFile(compressedFileName);
+        if (compFile.is_open()) {
+            loadFromCompressedFile(compFile);
+            compFile.close();
             return;
         }
 

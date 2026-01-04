@@ -282,10 +282,8 @@ public:
         bool first = true;
         for (auto it = huffmanCodes.begin(); it != huffmanCodes.end(); ++it) {
             if (!first) serialized += ";";
-            // Escape special characters if necessary, but for simplicity assume non-delimiter chars.
-            // For char, if it's ':' or ';', this simple format breaks.
-            // A more robust solution would escape these chars or use base64 encoding for chars.
-            serialized += std::string(1, it->key) + ":" + it->value;
+            // Use numeric character code for the key to avoid delimiter collisions
+            serialized += std::to_string(static_cast<unsigned char>(it->key)) + ":" + it->value;
             first = false;
         }
         return serialized;
@@ -300,18 +298,38 @@ public:
 
         if (serializedCodes.empty()) return;
 
-        // Reconstruct huffmanCodes list
-        DoublyLinkedList<std::string> pairs = PenyimpanFile::pisah(serializedCodes, ';'); 
+        // Remove any stray carriage returns that may come from CRLF files
+        std::string cleaned = serializedCodes;
+        cleaned.erase(std::remove(cleaned.begin(), cleaned.end(), '\r'), cleaned.end());
+
+        // Reconstruct huffmanCodes list. Format now is: <ascii_number>:<code>;<ascii_number>:<code>;...
+        DoublyLinkedList<std::string> pairs = PenyimpanFile::pisah(cleaned, ';'); 
         for (auto it_pair = pairs.begin(); it_pair != pairs.end(); ++it_pair) {
             std::string pairStr = *it_pair;
             if (pairStr.empty()) continue;
 
             size_t colonPos = pairStr.find(':');
-            if (colonPos != std::string::npos && colonPos > 0) { // colonPos > 0 to ensure char exists
-                char ch = pairStr[0]; 
-                std::string code = pairStr.substr(colonPos + 1);
-                huffmanCodes.push_back(CustomPair<char, std::string>(ch, code));
+            if (colonPos == std::string::npos) continue;
+
+            std::string keyToken = pairStr.substr(0, colonPos);
+            std::string code = pairStr.substr(colonPos + 1);
+
+            // Trim whitespace from keyToken and code
+            keyToken.erase(std::remove_if(keyToken.begin(), keyToken.end(), ::isspace), keyToken.end());
+            code.erase(std::remove_if(code.begin(), code.end(), ::isspace), code.end());
+
+            if (keyToken.empty() || code.empty()) continue;
+
+            // Parse numeric key
+            int keyVal = 0;
+            try {
+                keyVal = std::stoi(keyToken);
+            } catch (...) {
+                continue; // skip malformed entries
             }
+
+            char ch = static_cast<char>(keyVal);
+            huffmanCodes.push_back(CustomPair<char, std::string>(ch, code));
         }
 
         // Build the decoding tree from the deserialized codes
